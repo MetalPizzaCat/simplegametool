@@ -21,6 +21,7 @@ add_executable(simplegametool main.cpp
     Code/Parser.cpp
     Code/CodeBuilder.hpp
     Code/CodeBuilder.cpp
+    Code/Lexems.hpp
     Engine/Asset.hpp
     Engine/Asset.cpp
     Engine/ContentManager.hpp

@@ -7,7 +7,7 @@
 #include <variant>
 
 #include "Engine/Scene.hpp"
-
+#include "Code/Parser.hpp"
 class MemoryObject
 {
 public:
@@ -24,6 +24,37 @@ private:
 
 int main(int, char **)
 {
+    using namespace Code;
+
+    std::string code = R"CODE(
+type Thing {
+    sprite = @img1 # {"./assets/image.png", x = 0, y = 0, width = 16, height = 16}
+    some_var = 0
+    other_val = (0, 0)
+    even_more = "wowza"
+}
+
+update:
+    end
+    
+on_start:
+    create_instance Thing, "name"
+    create_instance Button, "btn1"
+    set new_val of bt1
+    get new_val of bt2
+    end
+
+    )CODE";
+    Parser p(code);
+    std::vector<std::unique_ptr<Token>> tokens = p.parseTokens();
+
+    for(std::unique_ptr<Token> const& token : tokens)
+    {
+        std::cout << token->toString() << " ";
+    }
+    std::cout << std::endl;
+
+
     using namespace Engine;
     Scene scene;
     std::unique_ptr<Asset> baba = std::make_unique<Asset>("./assets/objects.png", true, sf::IntRect(sf::Vector2i(0, 0), sf::Vector2i(24, 24)));
