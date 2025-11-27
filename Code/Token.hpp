@@ -11,6 +11,9 @@ namespace Code
         explicit Token(size_t row, size_t column) : m_row(row), m_column(column) {}
         virtual std::string toString() const = 0;
 
+        size_t getRow() const { return m_row; }
+        size_t getColumn() const { return m_column; }
+
     private:
         size_t m_row;
         size_t m_column;
@@ -21,6 +24,8 @@ namespace Code
     public:
         explicit KeywordToken(size_t row, size_t column, Keyword keyword) : Token(row, column), m_keyword(keyword) {}
         std::string toString() const override;
+
+        Keyword getKeyword() const { return m_keyword; }
 
     private:
         Keyword m_keyword;
@@ -44,6 +49,8 @@ namespace Code
 
         std::string toString() const override;
 
+        Separator getSeparator() const { return m_separator; }
+
     private:
         Separator m_separator;
     };
@@ -54,6 +61,8 @@ namespace Code
         explicit StringToken(size_t row, size_t column, std::string const &str) : Token(row, column), m_str(str) {}
 
         std::string toString() const override;
+
+        std::string const &getString() const { return m_str; }
 
     private:
         std::string m_str;
@@ -66,6 +75,8 @@ namespace Code
 
         std::string toString() const override;
 
+        std::string const &getId() const { return m_str; }
+
     private:
         std::string m_str;
     };
@@ -77,6 +88,8 @@ namespace Code
 
         std::string toString() const override;
 
+        std::string const &getAssetName() const { return m_assetName; }
+
     private:
         std::string m_assetName;
     };
@@ -87,6 +100,8 @@ namespace Code
         explicit IntToken(size_t row, size_t column, int64_t number) : Token(row, column), m_number(number) {}
         std::string toString() const override;
 
+        int64_t getValue() const { return m_number; }
+
     private:
         int64_t m_number;
     };
@@ -96,6 +111,8 @@ namespace Code
     public:
         explicit FloatToken(size_t row, size_t column, double number) : Token(row, column), m_number(number) {}
         std::string toString() const override;
+
+        double getValue() const { return m_number; }
 
     private:
         double m_number;

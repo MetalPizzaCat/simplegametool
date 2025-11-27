@@ -8,6 +8,7 @@
 #include <iostream>
 #include "Value.hpp"
 #include "Instructions.hpp"
+#include "../Code/CodeBuilder.hpp"
 
 namespace Engine
 {
@@ -21,6 +22,8 @@ namespace Engine
     class Scene
     {
     public:
+        explicit Scene(Runnable::RunnableCode const &code);
+
         void update()
         {
             if (hasFunction("update"))
@@ -37,16 +40,7 @@ namespace Engine
             }
         }
 
-        void runFunction(std::string const &name)
-        {
-            if (!m_functions.contains(name))
-            {
-                throw std::runtime_error("no function with given name found");
-            }
-            std::vector<size_t> callStack;
-            runNestedFunction(name, callStack);
-            std::cout << "Finished running " << name << std::endl;
-        }
+        void runFunction(std::string const &name);
 
         void addType(std::string const &name, std::unique_ptr<ObjectType> type)
         {
@@ -65,7 +59,7 @@ namespace Engine
 
     private:
         void runNestedFunction(std::string const &name, std::vector<size_t> &callStack);
-        
+
         std::vector<Value> m_variables;
         std::vector<std::string> m_strings;
         std::map<std::string, size_t> m_typeNames;

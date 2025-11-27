@@ -1,6 +1,7 @@
 #include "Parser.hpp"
 #include <algorithm>
 #include <limits>
+#include "Error.hpp"
 
 Code::Parser::Parser(std::string const &code) : m_current(code.begin()), m_end(code.end()), m_column(0), m_row(0)
 {
@@ -47,7 +48,7 @@ std::vector<std::unique_ptr<Code::Token>> Code::Parser::parseTokens()
         }
         else
         {
-            throw ParsingError(m_row, m_column, "Unexpected symbol");
+            throw Errors::ParsingError(m_row, m_column, "Unexpected symbol");
         }
         skipComments();
     }
@@ -207,7 +208,7 @@ std::unique_ptr<Code::StringToken> Code::Parser::parseString()
     }
     if (isAtTheEnd() || *m_current != '"')
     {
-        throw ParsingError(m_row, m_column, "Expected '\"'");
+        throw Errors::ParsingError(m_row, m_column, "Expected '\"'");
     }
     advance();
     return std::make_unique<StringToken>(m_row, m_column, result);
@@ -275,7 +276,7 @@ std::unique_ptr<Code::IntToken> Code::Parser::parseInt()
     }
     catch (std::out_of_range const &e)
     {
-        throw ParsingError(
+        throw Errors::ParsingError(
             m_row, m_column,
             "Constant number is too large, valid range is " +
                 std::to_string(std::numeric_limits<int64_t>::min()) +
@@ -307,7 +308,7 @@ std::unique_ptr<Code::FloatToken> Code::Parser::parseFloat()
             }
             else
             {
-                throw ParsingError(m_row, m_column, "Malformed floating point constant");
+                throw Errors::ParsingError(m_row, m_column, "Malformed floating point constant");
             }
         }
         num.push_back(getFromCurrentWithOffset(offset).value());
@@ -327,7 +328,7 @@ std::unique_ptr<Code::FloatToken> Code::Parser::parseFloat()
     }
     catch (std::out_of_range const &e)
     {
-        throw ParsingError(
+        throw Errors::ParsingError(
             m_row, m_column,
             "Constant number is too large, valid range is " +
                 std::to_string(std::numeric_limits<double>::min()) +
@@ -355,15 +356,4 @@ std::unique_ptr<Code::InstructionToken> Code::Parser::parseInstruction()
     return std::unique_ptr<InstructionToken>();
 }
 
-const char *Code::ParsingError::what() const throw()
-{
-    return m_message.c_str();
-}
 
-Code::ParsingError::ParsingError(size_t line, size_t column, std::string const &msg) : m_message(msg), m_column(column), m_line(line)
-{
-}
-
-Code::ParsingError::ParsingError(std::string const &msg) : m_message(msg), m_column((size_t)-1), m_line((size_t)-1)
-{
-}

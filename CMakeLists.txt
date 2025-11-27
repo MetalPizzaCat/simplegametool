@@ -15,13 +15,21 @@ FetchContent_Declare(SFML
 FetchContent_MakeAvailable(SFML)
 
 add_executable(simplegametool main.cpp
+    Code/Code.hpp
+    Code/Code.cpp
     Code/Token.hpp
     Code/Token.cpp
     Code/Parser.hpp
     Code/Parser.cpp
     Code/CodeBuilder.hpp
     Code/CodeBuilder.cpp
+    Code/CodeGenerator.hpp
+    Code/CodeGenerator.cpp
     Code/Lexems.hpp
+    Code/Error.hpp
+    Code/Error.cpp
+    Engine/Runnable.hpp
+    Engine/Runnable.cpp
     Engine/Asset.hpp
     Engine/Asset.cpp
     Engine/ContentManager.hpp

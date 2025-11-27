@@ -58,12 +58,12 @@ std::string Code::StringToken::toString() const
 
 std::string Code::IntToken::toString() const
 {
-    return std::to_string(m_number);
+    return std::string("INT(") + std::to_string(m_number) + ")";
 }
 
 std::string Code::FloatToken::toString() const
 {
-    return std::to_string(m_number);
+    return std::string("FLOAT(") + std::to_string(m_number) + ")";
 }
 
 std::string Code::BoolToken::toString() const
@@ -94,6 +94,8 @@ std::string Code::SeparatorToken::toString() const
         return "SEP(BracketClose)";
     case Separator::EndOfStatement:
         return "SEP(EndOfStatement)";
+    case Separator::Comma:
+        return "SEP(Comma)";
     default:
         return "UNKNOWN";
     }

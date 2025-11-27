@@ -7,7 +7,8 @@
 #include <variant>
 
 #include "Engine/Scene.hpp"
-#include "Code/Parser.hpp"
+#include "Code/Code.hpp"
+
 class MemoryObject
 {
 public:
@@ -22,8 +23,15 @@ private:
     sf::Sprite m_sprite;
 };
 
+Engine::Scene loadSceneFromString(std::string const &code)
+{
+    Engine::Runnable::RunnableCode sceneCode = Code::Fusion::compileFusionString(code);
+    return Engine::Scene(sceneCode);
+}
+
 int main(int, char **)
 {
+
     using namespace Code;
 
     std::string code = R"CODE(
@@ -34,31 +42,13 @@ type Thing {
     even_more = "wowza"
 }
 
-update:
-    end
-    
-on_start:
-    create_instance Thing, "name"
-    create_instance Button, "btn1"
-    set new_val of bt1
-    get new_val of bt2
-    end
-
     )CODE";
-    Parser p(code);
-    std::vector<std::unique_ptr<Token>> tokens = p.parseTokens();
-
-    for(std::unique_ptr<Token> const& token : tokens)
-    {
-        std::cout << token->toString() << " ";
-    }
-    std::cout << std::endl;
-
 
     using namespace Engine;
-    Scene scene;
-    std::unique_ptr<Asset> baba = std::make_unique<Asset>("./assets/objects.png", true, sf::IntRect(sf::Vector2i(0, 0), sf::Vector2i(24, 24)));
-    scene.addType("TestObj", std::make_unique<ObjectType>(baba.get(), std::map<std::string, ValueType>{}));
+    ContentManager::getInstance().addAsset("img1", std::make_unique<Asset>("./assets/objects.png", true, sf::IntRect(sf::Vector2i(0, 0), sf::Vector2i(24, 24))));
+    Scene scene = loadSceneFromString(code);
+
+    // scene.addType("TestObj", std::make_unique<ObjectType>(baba.get(), std::map<std::string, ValueType>{}));
     scene.addFunction("start", 0, 0);
 
     scene.addFunction("update", 5, 0);
@@ -83,7 +73,7 @@ on_start:
     scene.getBytes().push_back((uint8_t)Instructions::PushFloat);
     scene.getBytes().push_back(0);
     scene.getBytes().push_back((uint8_t)Instructions::MakePosition);
-    
+
     scene.getBytes().push_back((uint8_t)Instructions::Add);
 
     scene.getBytes().push_back((uint8_t)Instructions::SetPosition);

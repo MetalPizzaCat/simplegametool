@@ -1,5 +1,24 @@
 #include "Scene.hpp"
 
+Engine::Scene::Scene(Runnable::RunnableCode const &code) : m_strings(code.strings)
+{
+    for (Runnable::TypeInfo const &type : code.types)
+    {
+        addType(type.getName(), std::make_unique<ObjectType>(ContentManager::getInstance().getAsset(type.getSpriteName()), type.getFields()));
+    }
+}
+
+void Engine::Scene::runFunction(std::string const &name)
+{
+    if (!m_functions.contains(name))
+    {
+        throw std::runtime_error("no function with given name found");
+    }
+    std::vector<size_t> callStack;
+    runNestedFunction(name, callStack);
+    std::cout << "Finished running " << name << std::endl;
+}
+
 void Engine::Scene::runNestedFunction(std::string const &name, std::vector<size_t> &callStack)
 {
     size_t pos = m_functions[name].start;
