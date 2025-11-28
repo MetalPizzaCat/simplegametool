@@ -41,12 +41,22 @@ namespace Code::Fusion
 
         void parseFunctionDeclaration();
 
+        void parseInstruction(FusionInstruction instruction);
+
+        /// @brief Convert instruction argument into bytes that can be written to the bytecode storage
+        /// @param token 
+        /// @return 
+        std::vector<uint8_t> createInstructionConstValueBytes(Token const *token);
+
         void consumeKeyword(Keyword keyword, std::string const &errorMessage);
 
         void consumeSeparator(Separator separator, std::string const &errorMessage);
 
         void consumeIdSeparator(std::string const &id, std::string const &errorMessage);
 
+        /// @brief Generate storable constant of a type that can be stored on stack for usage during object initialisation
+        /// @param errorMessage 
+        /// @return 
         Engine::Runnable::CodeConstantValue parseConstant(std::string const &errorMessage);
 
         /// @brief Try to consume separator and if the current value is not separator of needed value, do nothing. useful for skipping line breaks
@@ -57,6 +67,10 @@ namespace Code::Fusion
         void advance() { m_it++; }
 
         CodeBuilder const &getBuilder() const { return m_builder; }
+
+        void consumeEndOfStatement();
+
+        void consumeEndOfStatementOrError(std::string const& err);
 
     private:
         void error(std::string const &errorMessage);

@@ -48,24 +48,38 @@ namespace Engine
             m_typeNames[name] = m_types.size() - 1;
         }
 
-        void addFunction(std::string const &name, size_t pos, size_t argCount)
+        void addFunction(std::string const &name, Runnable::RunnableFunction const &function)
         {
-            m_functions[name] = Function{.start = pos, .argumentCount = argCount};
+            m_functions[name] = function;
         }
 
         bool hasFunction(std::string const &name) const { return m_functions.contains(name); }
 
-        std::vector<uint8_t> &getBytes() { return m_byteCode; }
+        /// @brief Parse next `sizeof(T)` bytes into a T value using bitshifts and reinterpret cast
+        /// @tparam T Type of the value to convert into
+        /// @param start Where in the byte code to start from
+        /// @return Parsed value
+        template <typename T>
+        T parseOperationConstant(std::vector<uint8_t>::const_iterator begin, std::vector<uint8_t>::const_iterator end)
+        {
+            uint64_t res = 0;
+            for (uint64_t i = 0; i < sizeof(T) && (begin + i) != end; i++)
+            {
+                uint64_t offset = (sizeof(T) - i - 1) * 8;
+                res |= (uint64_t)(*(begin + i)) << offset;
+            }
+            T *f = reinterpret_cast<T *>(&res);
+            return *f;
+        }
 
     private:
         void runNestedFunction(std::string const &name, std::vector<size_t> &callStack);
-
+        std::vector<std::vector<Value>> m_operationStack = {{}};
         std::vector<Value> m_variables;
         std::vector<std::string> m_strings;
         std::map<std::string, size_t> m_typeNames;
         std::vector<std::unique_ptr<ObjectType>> m_types;
-        std::vector<uint8_t> m_byteCode;
-        std::map<std::string, Function> m_functions;
+        std::map<std::string, Runnable::RunnableFunction> m_functions;
         std::vector<std::unique_ptr<GameObject>> m_objects;
     };
 }

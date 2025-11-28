@@ -355,5 +355,3 @@ std::unique_ptr<Code::InstructionToken> Code::Parser::parseInstruction()
     return nullptr;
     return std::unique_ptr<InstructionToken>();
 }
-
-

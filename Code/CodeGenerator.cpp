@@ -3,10 +3,7 @@
 
 void Code::Fusion::FusionCodeGenerator::generate()
 {
-    while (isSeparator(Separator::EndOfStatement))
-    {
-        advance();
-    }
+    consumeEndOfStatement();
     while (isKeyword(Keyword::Type) || isKeyword(Keyword::Function))
     {
 
@@ -18,6 +15,7 @@ void Code::Fusion::FusionCodeGenerator::generate()
         {
             parseFunctionDeclaration();
         }
+        consumeEndOfStatement();
     }
 }
 
@@ -66,10 +64,7 @@ void Code::Fusion::FusionCodeGenerator::parseTypeDeclaration()
         advance();
         fields[fieldTok->getId()] = val;
 
-        if (isSeparator(Separator::EndOfStatement))
-        {
-            advance();
-        }
+        consumeEndOfStatement();
     }
 
     consumeSeparator(Separator::BlockClose, "expected '}'");
@@ -79,6 +74,204 @@ void Code::Fusion::FusionCodeGenerator::parseTypeDeclaration()
 
 void Code::Fusion::FusionCodeGenerator::parseFunctionDeclaration()
 {
+    using namespace Engine::Runnable;
+    consumeKeyword(Keyword::Function, "Expected 'func'");
+    IdToken const *name = getTokenOrError<IdToken>("expected function name");
+    advance();
+    consumeSeparator(Separator::BlockOpen, "expected '{'");
+    consumeEndOfStatement();
+    m_builder.createBlock();
+    while (getCurrent() != nullptr)
+    {
+        if (isOfType<SeparatorToken>())
+        {
+            break;
+        }
+        InstructionToken const *token = getTokenOrError<InstructionToken>("Expected instruction");
+        advance();
+        // push is only special instruction type because each variant is its own opcode
+        // while we could make the data structure more complex and make it find specific combination of instruction and arguments
+        // this wouldn't be worth it, although could be worth to take a look in future if necessary
+        if (token->getInstruction() == FusionInstruction::Push)
+        {
+            std::vector<uint8_t> bytes;
+            Engine::Runnable::CodeConstantValue val = parseConstant("Expected valid value");
+            switch ((Engine::Runnable::CodeConstantValueType)val.index())
+            {
+            case Engine::Runnable::CodeConstantValueType::Bool:
+                error("boolean not implemented");
+                break;
+            case Engine::Runnable::CodeConstantValueType::Int:
+            {
+                bytes = {(uint8_t)Engine::Instructions::PushInt};
+                std::vector<uint8_t> temp = parseToBytes(std::get<int64_t>(val));
+                bytes.insert(bytes.end(), temp.begin(), temp.end());
+            }
+            break;
+            case Engine::Runnable::CodeConstantValueType::Float:
+            {
+                bytes = {(uint8_t)Engine::Instructions::PushFloat};
+                std::vector<uint8_t> temp = parseToBytes(std::get<double>(val));
+                bytes.insert(bytes.end(), temp.begin(), temp.end());
+            }
+            break;
+            case Engine::Runnable::CodeConstantValueType::StringId:
+            {
+                bytes = {(uint8_t)Engine::Instructions::LoadConstString};
+                std::vector<uint8_t> temp = parseToBytes<size_t>(std::get<size_t>(val));
+                bytes.insert(bytes.end(), temp.begin(), temp.end());
+            }
+            break;
+            case Engine::Runnable::CodeConstantValueType::Vector:
+            {
+                bytes = {(uint8_t)Engine::Instructions::PushVector};
+                sf::Vector2f vec = std::get<sf::Vector2f>(val);
+                std::vector<uint8_t> temp = parseToBytes((double)vec.x);
+                bytes.insert(bytes.end(), temp.begin(), temp.end());
+                temp = parseToBytes((double)vec.y);
+                bytes.insert(bytes.end(), temp.begin(), temp.end());
+            }
+            break;
+            }
+            advance();
+            m_builder.getCurrentBlock().insert(bytes);
+            consumeEndOfStatementOrError("Expected new line or ';'");
+        }
+        else
+        {
+            parseInstruction(token->getInstruction());
+        }
+    }
+
+    consumeSeparator(Separator::BlockClose, "expected '}'");
+    m_builder.addFunction(name->getId(), Engine::Runnable::RunnableFunction{.argumentCount = 0, .bytes = m_builder.getCurrentBlock().getBytes()});
+    m_builder.popBlock();
+}
+
+void Code::Fusion::FusionCodeGenerator::parseInstruction(FusionInstruction instruction)
+{
+    if (!FusionInstructionsData.contains(instruction))
+    {
+        error("Unknown unrecognised instruction");
+        return;
+    }
+    FusionInstructionData const *data = &FusionInstructionsData.at(instruction);
+    std::vector<uint8_t> bytes = {(uint8_t)data->instruction};
+
+    Token const *token = getCurrent();
+    for (size_t argCount = 0; !isSeparator(Separator::EndOfStatement) && (token = getCurrent()) != nullptr; argCount++)
+    {
+        if (argCount >= data->argumentTypes.size())
+        {
+            error("Instruction received too many arguments");
+        }
+        switch (data->argumentTypes[argCount])
+        {
+        case InstructionArgumentType::Any:
+        {
+            std::vector<uint8_t> t = createInstructionConstValueBytes(token);
+            bytes.insert(bytes.end(), t.begin(), t.end());
+        }
+        break;
+        case InstructionArgumentType::Bool:
+            break;
+        case InstructionArgumentType::Int:
+        {
+            std::vector<uint8_t> b = parseToBytes(getTokenOrError<IntToken>("Expected integer value")->getValue());
+            bytes.insert(bytes.end(), b.begin(), b.end());
+        }
+        break;
+        case InstructionArgumentType::Float:
+        {
+            std::vector<uint8_t> b = parseToBytes(getTokenOrError<FloatToken>("Expected floating point value")->getValue());
+            bytes.insert(bytes.end(), b.begin(), b.end());
+        }
+        case InstructionArgumentType::String:
+        {
+            size_t id = m_builder.getOrAddStringId(getTokenOrError<StringToken>("Expected string value")->getString());
+            std::vector<uint8_t> b = parseToBytes(id);
+            bytes.insert(bytes.end(), b.begin(), b.end());
+        }
+        break;
+        case InstructionArgumentType::ObjectType:
+        {
+            if (std::optional<size_t> id = m_builder.getTypeByName(getTokenOrError<IdToken>("Expected type name")->getId()); id.has_value())
+            {
+                std::vector<uint8_t> b = parseToBytes(id.value());
+                bytes.insert(bytes.end(), b.begin(), b.end());
+            }
+            else
+            {
+                error("Unknown type '" + getTokenOrError<IdToken>("Expected type name")->getId() + "'");
+            }
+        }
+        break;
+        case InstructionArgumentType::FunctionName:
+            break;
+        }
+        advance();
+        optionallyConsumeSeparator(Separator::Comma);
+    }
+    consumeEndOfStatementOrError("expected new line or ';'");
+    m_builder.getCurrentBlock().insert(bytes);
+}
+
+std::vector<uint8_t> Code::Fusion::FusionCodeGenerator::createInstructionConstValueBytes(Token const *token)
+{
+    if (isOfType<IntToken>())
+    {
+        return parseToBytes(getTokenOrError<IntToken>("Expected integer value")->getValue());
+    }
+    else if (isOfType<FloatToken>())
+    {
+        return parseToBytes(getTokenOrError<FloatToken>("Expected floating point value")->getValue());
+    }
+    else if (isOfType<StringToken>())
+    {
+        return parseToBytes(m_builder.getOrAddStringId(getTokenOrError<StringToken>("Expected string value")->getString()));
+    }
+    // for vectors
+    else if (isSeparator(Separator::BracketOpen))
+    {
+        advance();
+        double a = 0;
+        if (isOfType<FloatToken>())
+        {
+            a = getTokenOrError<FloatToken>("Expected number")->getValue();
+        }
+        else if (isOfType<IntToken>())
+        {
+            a = (double)getTokenOrError<IntToken>("Expected number")->getValue();
+        }
+        else
+        {
+            error("Expected number");
+        }
+        advance();
+        consumeSeparator(Separator::Comma, "Expected ','");
+        double b = 0;
+        if (isOfType<FloatToken>())
+        {
+            b = getTokenOrError<FloatToken>("Expected number")->getValue();
+        }
+        else if (isOfType<IntToken>())
+        {
+            b = (double)getTokenOrError<IntToken>("Expected number")->getValue();
+        }
+        else
+        {
+            error("Expected number");
+        }
+        advance();
+        consumeSeparator(Separator::BracketClose, "Expected ')'");
+        std::vector<uint8_t> bytes = parseToBytes(a);
+        std::vector<uint8_t> temp = parseToBytes(b);
+        bytes.insert(bytes.end(), temp.begin(), temp.end());
+        return bytes;
+    }
+
+    error("Unknown const type");
+    return std::vector<uint8_t>();
 }
 
 void Code::Fusion::FusionCodeGenerator::consumeKeyword(Keyword keyword, std::string const &errorMessage)
@@ -154,7 +347,7 @@ Engine::Runnable::CodeConstantValue Code::Fusion::FusionCodeGenerator::parseCons
             error("Expected number");
         }
         advance();
-         consumeSeparator(Separator::BracketClose, "Expected ')'");
+        consumeSeparator(Separator::BracketClose, "Expected ')'");
         return sf::Vector2f(a, b);
     }
     error("Unexpected symbol, expected a constant values");
@@ -164,6 +357,26 @@ Engine::Runnable::CodeConstantValue Code::Fusion::FusionCodeGenerator::parseCons
 void Code::Fusion::FusionCodeGenerator::optionallyConsumeSeparator(Separator separator)
 {
     if (isSeparator(separator))
+    {
+        advance();
+    }
+}
+
+void Code::Fusion::FusionCodeGenerator::consumeEndOfStatement()
+{
+    while (isSeparator(Separator::EndOfStatement))
+    {
+        advance();
+    }
+}
+
+void Code::Fusion::FusionCodeGenerator::consumeEndOfStatementOrError(std::string const &err)
+{
+    if (!isSeparator(Separator::EndOfStatement))
+    {
+        error(err);
+    }
+    while (isSeparator(Separator::EndOfStatement))
     {
         advance();
     }

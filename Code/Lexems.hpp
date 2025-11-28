@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <map>
 #include <vector>
+#include "../Engine/Instructions.hpp"
 
 namespace Code
 {
@@ -21,6 +22,7 @@ namespace Code
         GetPositionX,
         SetPositionX,
         MakeVector,
+        Push,
     };
 
     enum class Keyword
@@ -58,8 +60,9 @@ namespace Code
         {"mul", FusionInstruction::Mul},
         {"div", FusionInstruction::Div},
         {"call", FusionInstruction::Call},
-        {"get_position", FusionInstruction::GetPosition},
-        {"set_position", FusionInstruction::SetPosition},
+        {"push", FusionInstruction::Push},
+        {"get_pos", FusionInstruction::GetPosition},
+        {"set_pos", FusionInstruction::SetPosition},
         {"get_x", FusionInstruction::GetPositionX},
         {"get_y", FusionInstruction::SetPositionX},
         {"make_vector", FusionInstruction::MakeVector},
@@ -88,5 +91,37 @@ namespace Code
         SpecialCharacter{.sequence = "\\'", .character = '\''},
         SpecialCharacter{.sequence = "\\t", .character = '\t'},
         SpecialCharacter{.sequence = "\\\\", .character = '\\'},
+    };
+
+    enum class InstructionArgumentType
+    {
+        Any,
+        Bool,
+        Int,
+        Float,
+        String,
+        ObjectType,
+        FunctionName
+    };
+
+    struct FusionInstructionData
+    {
+        Engine::Instructions instruction;
+        std::vector<InstructionArgumentType> argumentTypes;
+    };
+
+    static const std::map<FusionInstruction, FusionInstructionData> FusionInstructionsData = {
+        {FusionInstruction::CreateInstance, FusionInstructionData{.instruction = Engine::Instructions::CreateInstance, .argumentTypes = {InstructionArgumentType::ObjectType}}},
+        {FusionInstruction::Set, FusionInstructionData{.instruction = Engine::Instructions::SetLocal, .argumentTypes = {InstructionArgumentType::Int}}},
+        {FusionInstruction::Get, FusionInstructionData{.instruction = Engine::Instructions::GetLocal, .argumentTypes = {InstructionArgumentType::Int}}},
+        {FusionInstruction::Add, FusionInstructionData{.instruction = Engine::Instructions::Add, .argumentTypes = {}}},
+        {FusionInstruction::Sub, FusionInstructionData{.instruction = Engine::Instructions::Sub, .argumentTypes = {}}},
+        {FusionInstruction::Mul, FusionInstructionData{.instruction = Engine::Instructions::Mul, .argumentTypes = {}}},
+        {FusionInstruction::Div, FusionInstructionData{.instruction = Engine::Instructions::Div, .argumentTypes = {}}},
+        {FusionInstruction::Call, FusionInstructionData{.instruction = Engine::Instructions::Call, .argumentTypes = {}}},
+        {FusionInstruction::GetPosition, FusionInstructionData{.instruction = Engine::Instructions::GetPosition, .argumentTypes = {}}},
+        {FusionInstruction::SetPosition, FusionInstructionData{.instruction = Engine::Instructions::SetPosition, .argumentTypes = {}}},
+        {FusionInstruction::GetPositionX, FusionInstructionData{.instruction = Engine::Instructions::GetVectorX, .argumentTypes = {}}},
+        {FusionInstruction::MakeVector, FusionInstructionData{.instruction = Engine::Instructions::MakeVector, .argumentTypes = {}}},
     };
 }

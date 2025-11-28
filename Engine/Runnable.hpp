@@ -7,6 +7,14 @@
 
 namespace Engine::Runnable
 {
+    enum class CodeConstantValueType
+    {
+        Bool,
+        Int,
+        Float,
+        StringId,
+        Vector
+    };
     using CodeConstantValue = std::variant<bool, int64_t, double, size_t, sf::Vector2f>;
     class TypeInfo
     {

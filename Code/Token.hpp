@@ -37,6 +37,7 @@ namespace Code
         explicit InstructionToken(size_t row, size_t column, FusionInstruction instruction) : Token(row, column), m_instruction(instruction) {}
 
         std::string toString() const override;
+        FusionInstruction getInstruction() const { return m_instruction; }
 
     private:
         FusionInstruction m_instruction;
@@ -118,6 +119,7 @@ namespace Code
         double m_number;
     };
 
+    
     class BoolToken : public Token
     {
         explicit BoolToken(size_t row, size_t column, bool val) : Token(row, column), m_val(val) {}

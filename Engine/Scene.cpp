@@ -1,6 +1,6 @@
 #include "Scene.hpp"
 
-Engine::Scene::Scene(Runnable::RunnableCode const &code) : m_strings(code.strings)
+Engine::Scene::Scene(Runnable::RunnableCode const &code) : m_strings(code.strings), m_functions(code.functions)
 {
     for (Runnable::TypeInfo const &type : code.types)
     {
@@ -21,60 +21,62 @@ void Engine::Scene::runFunction(std::string const &name)
 
 void Engine::Scene::runNestedFunction(std::string const &name, std::vector<size_t> &callStack)
 {
-    size_t pos = m_functions[name].start;
-    std::vector<Value> stack;
-    while (pos < m_byteCode.size())
+    Runnable::RunnableFunction const &func = m_functions.at(name);
+    size_t pos = 0;
+    m_operationStack.push_back({});
+    while (pos < func.bytes.size())
     {
-        switch ((Instructions)m_byteCode[pos])
+        switch ((Instructions)func.bytes.at(pos))
         {
         case Instructions::None:
             break;
         case Instructions::LoadConstString:
             break;
-        case Instructions::LoadConstInt:
-            break;
-        case Instructions::LoadConstFloat:
-            break;
-        case Instructions::LoadType:
-            break;
         case Instructions::CreateInstance:
         {
-            size_t typeId = m_byteCode[++pos];
+            size_t typeId = parseOperationConstant<int64_t>(func.bytes.begin() + (++pos), func.bytes.end());
+            pos += sizeof(size_t) - 1;
             m_objects.push_back(std::make_unique<GameObject>(m_types[typeId].get()));
-            stack.push_back(m_objects.back().get());
+            m_operationStack.back().push_back(m_objects.back().get());
         }
         break;
         case Instructions::PushInt:
+            m_operationStack.back().push_back(parseOperationConstant<int64_t>(func.bytes.begin() + (++pos), func.bytes.end()));
+            pos += sizeof(int64_t) - 1;
             break;
         case Instructions::PushFloat:
-            stack.push_back((float)m_byteCode[++pos]);
+            m_operationStack.back().push_back(parseOperationConstant<double>(func.bytes.begin() + (++pos), func.bytes.end()));
+            pos += sizeof(double) - 1;
             break;
+
         case Instructions::SetLocal:
         {
-            size_t id = m_byteCode[++pos];
+            size_t id = parseOperationConstant<int64_t>(func.bytes.begin() + (++pos), func.bytes.end());
+            pos += sizeof(size_t) - 1;
             if (id >= m_variables.size())
             {
                 m_variables.resize(id + 1);
             }
-            m_variables[id] = stack.back();
-            stack.pop_back();
+            m_variables[id] = m_operationStack.back().back();
+            m_operationStack.back().pop_back();
         }
         break;
         case Instructions::GetLocal:
         {
-            size_t id = m_byteCode[++pos];
-            stack.push_back(m_variables[id]);
+            size_t id = parseOperationConstant<int64_t>(func.bytes.begin() + (++pos), func.bytes.end());
+            pos += sizeof(size_t) - 1;
+            m_operationStack.back().push_back(m_variables[id]);
         }
         break;
         case Instructions::Add:
         {
-            Value a = stack.back();
-            stack.pop_back();
-            Value b = stack.back();
-            stack.pop_back();
+            Value a = m_operationStack.back().back();
+            m_operationStack.back().pop_back();
+            Value b = m_operationStack.back().back();
+            m_operationStack.back().pop_back();
             if (a.index() == ValueType::Vector)
             {
-                stack.push_back(std::get<sf::Vector2f>(a) + std::get<sf::Vector2f>(b));
+                m_operationStack.back().push_back(std::get<sf::Vector2f>(a) + std::get<sf::Vector2f>(b));
             }
         }
         break;
@@ -105,34 +107,38 @@ void Engine::Scene::runNestedFunction(std::string const &name, std::vector<size_
         break;
         case Instructions::SetPosition:
         {
-            Value pos = stack.back();
-            stack.pop_back();
-            Value obj = stack.back();
-            stack.pop_back();
+            Value pos = m_operationStack.back().back();
+            m_operationStack.back().pop_back();
+            Value obj = m_operationStack.back().back();
+            m_operationStack.back().pop_back();
 
             std::get<GameObject *>(obj)->setPosition(sf::Vector2f(std::get<sf::Vector2f>(pos)));
         }
         break;
         case Instructions::GetPosition:
         {
-            Value obj = stack.back();
-            stack.pop_back();
+            Value obj = m_operationStack.back().back();
+            m_operationStack.back().pop_back();
 
-            stack.push_back(std::get<GameObject *>(obj)->getPosition());
+            m_operationStack.back().push_back(std::get<GameObject *>(obj)->getPosition());
         }
         break;
-        case Instructions::MakePosition:
+        case Instructions::MakeVector:
         {
-            Value a = stack.back();
-            stack.pop_back();
-            Value b = stack.back();
-            stack.pop_back();
-            stack.push_back(sf::Vector2f(std::get<double>(a), std::get<double>(b)));
+            if (m_operationStack.back().size() < 2)
+            {
+                throw std::runtime_error("Stack doesn't have enough values for operation, expected 2");
+            }
+            Value a = m_operationStack.back().back();
+            m_operationStack.back().pop_back();
+            Value b = m_operationStack.back().back();
+            m_operationStack.back().pop_back();
+            m_operationStack.back().push_back(sf::Vector2f(std::get<double>(a), std::get<double>(b)));
         }
         break;
-        case Instructions::GetPositionX:
+        case Instructions::GetVectorX:
             break;
-        case Instructions::GetPositionY:
+        case Instructions::GetVectorY:
             break;
         }
         pos++;

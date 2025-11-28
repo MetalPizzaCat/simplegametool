@@ -30,8 +30,27 @@ size_t Code::CodeBuilder::getOrAddStringId(std::string const &str)
 Engine::Runnable::RunnableCode Code::CodeBuilder::getRunnableCode() const
 {
     return Engine::Runnable::RunnableCode{
-        .functions = {},
+        .functions = m_functions,
         .types = m_types,
-        .strings = m_strings
-    };
+        .strings = m_strings};
+}
+
+void Code::CodeBuilder::createBlock()
+{
+    m_blocks.push_back(CodeBlock());
+}
+
+void Code::CodeBuilder::popBlock()
+{
+    m_blocks.pop_back();
+}
+
+void Code::CodeBuilder::addFunction(std::string const &name, Engine::Runnable::RunnableFunction func)
+{
+    m_functions[name] = func;
+}
+
+void Code::CodeBlock::insert(std::vector<uint8_t> const &bytes)
+{
+    m_bytes.insert(m_bytes.end(), bytes.begin(), bytes.end());
 }

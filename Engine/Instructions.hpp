@@ -6,12 +6,10 @@ enum class Instructions
 {
     None,
     LoadConstString,
-    LoadConstInt,
-    LoadConstFloat,
-    LoadType,
     CreateInstance,
     PushInt,
     PushFloat,
+    PushVector,
     SetLocal,
     GetLocal,
     Add,
@@ -27,8 +25,8 @@ enum class Instructions
     // push position of the object on the stack
     GetPosition,
     // create vector from two values on the stack
-    MakePosition,
-    GetPositionX,
-    GetPositionY,
+    MakeVector,
+    GetVectorX,
+    GetVectorY,
 };
 }
