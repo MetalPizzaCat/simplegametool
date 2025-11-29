@@ -72,7 +72,7 @@ int main(int, char **)
 
 
 
-type Thing {
+type Thing  {
     sprite = @img1 # {"./assets/image.png", x = 0, y = 0, width = 16, height = 16}
     some_var = 0
     other_val = (0, 0)
@@ -101,47 +101,28 @@ func update{
     )CODE";
 
     using namespace Engine;
-    ContentManager::getInstance().addAsset("img1", std::make_unique<Asset>("./assets/objects.png", true, sf::IntRect(sf::Vector2i(0, 0), sf::Vector2i(24, 24))));
+    ContentManager::getInstance().addAsset("img1", std::make_unique<SpriteFramesAsset>("./assets/objects.png",
+                                                                                       std::map<std::string, SpriteAnimation>{
+                                                                                           {"default", SpriteAnimation{
+                                                                                                           .frames = {
+                                                                                                               sf::IntRect(sf::Vector2i(0, 0), sf::Vector2i(24, 24)),
+                                                                                                               sf::IntRect(sf::Vector2i(24, 0), sf::Vector2i(24, 24)),
+                                                                                                               sf::IntRect(sf::Vector2i(48, 0), sf::Vector2i(24, 24)),
+                                                                                                               sf::IntRect(sf::Vector2i(72, 0), sf::Vector2i(24, 24))},
+                                                                                                           .framesPerSecond = 15,
+                                                                                                           .looping = true}}},
+                                                                                       sf::IntRect(sf::Vector2i(0, 0), sf::Vector2i(24, 24))));
     try
     {
         Scene scene = loadSceneFromString(code);
 
-        // scene.addType("TestObj", std::make_unique<ObjectType>(baba.get(), std::map<std::string, ValueType>{}));
-        // scene.addFunction("start", 0, 0);
-
-        // scene.addFunction("update", 5, 0);
-
-        // // $0 = create_instance 0
-        // scene.getBytes().push_back((uint8_t)Instructions::CreateInstance);
-        // scene.getBytes().push_back(0);
-        // scene.getBytes().push_back((uint8_t)Instructions::SetLocal);
-        // scene.getBytes().push_back(0);
-        // scene.getBytes().push_back((uint8_t)Instructions::Return);
-
-        // // update:
-        // scene.getBytes().push_back((uint8_t)Instructions::GetLocal);
-        // scene.getBytes().push_back(0);
-
-        // scene.getBytes().push_back((uint8_t)Instructions::GetLocal);
-        // scene.getBytes().push_back(0);
-        // scene.getBytes().push_back((uint8_t)Instructions::GetPosition);
-
-        // scene.getBytes().push_back((uint8_t)Instructions::PushFloat);
-        // scene.getBytes().push_back(1);
-        // scene.getBytes().push_back((uint8_t)Instructions::PushFloat);
-        // scene.getBytes().push_back(0);
-        // scene.getBytes().push_back((uint8_t)Instructions::MakeVector);
-
-        // scene.getBytes().push_back((uint8_t)Instructions::Add);
-
-        // scene.getBytes().push_back((uint8_t)Instructions::SetPosition);
-        // scene.getBytes().push_back((uint8_t)Instructions::Return);
-
         auto window = sf::RenderWindow(sf::VideoMode({(34 * 24u), (25 * 24u)}), "Simple game tool");
+        sf::Clock deltaClock;
         window.setFramerateLimit(144);
         scene.runFunction("start");
         while (window.isOpen())
         {
+            sf::Time deltaTime = deltaClock.restart();
             while (const std::optional event = window.pollEvent())
             {
                 if (event->is<sf::Event::Closed>())
@@ -149,7 +130,7 @@ func update{
                     window.close();
                 }
             }
-            scene.update();
+            scene.update(deltaTime.asSeconds());
 
             window.clear();
 

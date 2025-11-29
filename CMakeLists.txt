@@ -42,6 +42,10 @@ add_executable(simplegametool main.cpp
     Engine/Scene.hpp
     Engine/Scene.cpp
     Engine/Value.hpp
+    Engine/Error.hpp
+    Engine/Error.cpp
+    Engine/AnimatedSprite.hpp
+    Engine/AnimatedSprite.cpp
 )
 
 target_link_libraries(simplegametool PRIVATE SFML::Graphics)

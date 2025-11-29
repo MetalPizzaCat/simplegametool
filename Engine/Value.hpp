@@ -11,9 +11,11 @@ namespace Engine
         Int,
         Double,
         Vector,
-        Object
+        Object,
+        String,
     };
     class GameObject;
-    using Value = std::variant<bool, int64_t, double, sf::Vector2f, GameObject *>;
+    class StringObject;
+    using Value = std::variant<bool, int64_t, double, sf::Vector2f, GameObject *, StringObject *>;
 
 }

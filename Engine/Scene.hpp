@@ -9,6 +9,7 @@
 #include "Value.hpp"
 #include "Instructions.hpp"
 #include "../Code/CodeBuilder.hpp"
+#include "MemoryObject.hpp"
 
 namespace Engine
 {
@@ -24,8 +25,12 @@ namespace Engine
     public:
         explicit Scene(Runnable::RunnableCode const &code);
 
-        void update()
+        void update(float delta)
         {
+            for (auto const &obj : m_objects)
+            {
+                obj->update(delta);
+            }
             if (hasFunction("update"))
             {
                 runFunction("update");
@@ -55,6 +60,8 @@ namespace Engine
 
         bool hasFunction(std::string const &name) const { return m_functions.contains(name); }
 
+        StringObject *createString(std::string const &str);
+
         /// @brief Parse next `sizeof(T)` bytes into a T value using bitshifts and reinterpret cast
         /// @tparam T Type of the value to convert into
         /// @param start Where in the byte code to start from
@@ -72,6 +79,8 @@ namespace Engine
             return *f;
         }
 
+        std::optional<std::string> getConstantStringById(size_t id) const;
+
     private:
         void runNestedFunction(std::string const &name, std::vector<size_t> &callStack);
         std::vector<std::vector<Value>> m_operationStack = {{}};
@@ -80,6 +89,9 @@ namespace Engine
         std::map<std::string, size_t> m_typeNames;
         std::vector<std::unique_ptr<ObjectType>> m_types;
         std::map<std::string, Runnable::RunnableFunction> m_functions;
+        /// @brief Various game objects that have various game logic
         std::vector<std::unique_ptr<GameObject>> m_objects;
+        /// @brief List of all memory tracked objects such as strings and arrays
+        std::vector<std::unique_ptr<MemoryObject>> m_memory;
     };
 }

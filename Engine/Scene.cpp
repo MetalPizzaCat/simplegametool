@@ -1,4 +1,5 @@
 #include "Scene.hpp"
+#include "Error.hpp"
 
 Engine::Scene::Scene(Runnable::RunnableCode const &code) : m_strings(code.strings), m_functions(code.functions)
 {
@@ -19,6 +20,21 @@ void Engine::Scene::runFunction(std::string const &name)
     std::cout << "Finished running " << name << std::endl;
 }
 
+Engine::StringObject *Engine::Scene::createString(std::string const &str)
+{
+    m_memory.push_back(std::make_unique<StringObject>(str));
+    return (Engine::StringObject *)m_memory.back().get();
+}
+
+std::optional<std::string> Engine::Scene::getConstantStringById(size_t id) const
+{
+    if (id >= m_strings.size())
+    {
+        return {};
+    }
+    return m_strings[id];
+}
+
 void Engine::Scene::runNestedFunction(std::string const &name, std::vector<size_t> &callStack)
 {
     Runnable::RunnableFunction const &func = m_functions.at(name);
@@ -31,28 +47,40 @@ void Engine::Scene::runNestedFunction(std::string const &name, std::vector<size_
         case Instructions::None:
             break;
         case Instructions::LoadConstString:
-            break;
+        {
+            size_t typeId = parseOperationConstant<int64_t>(func.bytes.begin() + (pos + 1), func.bytes.end());
+            pos += sizeof(size_t);
+            if (std::optional<std::string> str = getConstantStringById(typeId); str.has_value())
+            {
+                m_operationStack.back().push_back(createString(str.value()));
+            }
+            else
+            {
+                throw Engine::Errors::RuntimeError(std::string("Unable to find string at id " + std::to_string(typeId)));
+            }
+        }
+        break;
         case Instructions::CreateInstance:
         {
-            size_t typeId = parseOperationConstant<int64_t>(func.bytes.begin() + (++pos), func.bytes.end());
-            pos += sizeof(size_t) - 1;
-            m_objects.push_back(std::make_unique<GameObject>(m_types[typeId].get()));
+            size_t typeId = parseOperationConstant<int64_t>(func.bytes.begin() + (pos + 1), func.bytes.end());
+            pos += sizeof(size_t);
+            m_objects.push_back(std::make_unique<GameObject>(m_types[typeId].get(), *this));
             m_operationStack.back().push_back(m_objects.back().get());
         }
         break;
         case Instructions::PushInt:
-            m_operationStack.back().push_back(parseOperationConstant<int64_t>(func.bytes.begin() + (++pos), func.bytes.end()));
-            pos += sizeof(int64_t) - 1;
+            m_operationStack.back().push_back(parseOperationConstant<int64_t>(func.bytes.begin() + (pos + 1), func.bytes.end()));
+            pos += sizeof(int64_t);
             break;
         case Instructions::PushFloat:
-            m_operationStack.back().push_back(parseOperationConstant<double>(func.bytes.begin() + (++pos), func.bytes.end()));
-            pos += sizeof(double) - 1;
+            m_operationStack.back().push_back(parseOperationConstant<double>(func.bytes.begin() + (pos + 1), func.bytes.end()));
+            pos += sizeof(double);
             break;
 
         case Instructions::SetLocal:
         {
-            size_t id = parseOperationConstant<int64_t>(func.bytes.begin() + (++pos), func.bytes.end());
-            pos += sizeof(size_t) - 1;
+            size_t id = parseOperationConstant<int64_t>(func.bytes.begin() + (pos + 1), func.bytes.end());
+            pos += sizeof(size_t);
             if (id >= m_variables.size())
             {
                 m_variables.resize(id + 1);
@@ -63,8 +91,8 @@ void Engine::Scene::runNestedFunction(std::string const &name, std::vector<size_
         break;
         case Instructions::GetLocal:
         {
-            size_t id = parseOperationConstant<int64_t>(func.bytes.begin() + (++pos), func.bytes.end());
-            pos += sizeof(size_t) - 1;
+            size_t id = parseOperationConstant<int64_t>(func.bytes.begin() + (pos + 1), func.bytes.end());
+            pos += sizeof(size_t);
             m_operationStack.back().push_back(m_variables[id]);
         }
         break;
