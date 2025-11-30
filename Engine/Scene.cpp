@@ -5,19 +5,41 @@ Engine::Scene::Scene(Runnable::RunnableCode const &code) : m_strings(code.string
 {
     for (Runnable::TypeInfo const &type : code.types)
     {
-        addType(type.getName(), std::make_unique<ObjectType>(ContentManager::getInstance().getAsset(type.getSpriteName()), type.getFields()));
+        addType(type.getName(), std::make_unique<ObjectType>(ContentManager::getInstance().getAsset(type.getSpriteName()), type.getFields(), type.getMethods()));
     }
 }
 
-void Engine::Scene::runFunction(std::string const &name)
+void Engine::Scene::update(float delta)
+{
+    for (auto const &obj : m_objects)
+    {
+        obj->update(delta);
+        if (m_objects.back()->getType()->hasMethod("update"))
+        {
+            runFunction(m_objects.back()->getType()->getMethod("update"));
+        }
+    }
+    if (hasFunction("update"))
+    {
+        runFunctionByName("update");
+    }
+}
+
+void Engine::Scene::runFunctionByName(std::string const &name)
 {
     if (!m_functions.contains(name))
     {
         throw std::runtime_error("no function with given name found");
     }
     std::vector<size_t> callStack;
-    runNestedFunction(name, callStack);
-    std::cout << "Finished running " << name << std::endl;
+    runNestedFunctionByName(name, callStack);
+    // std::cout << "Finished running " << name << std::endl;
+}
+
+void Engine::Scene::runFunction(Runnable::RunnableFunction const &func)
+{
+    std::vector<size_t> callStack;
+    runNestedFunction(func, callStack);
 }
 
 Engine::StringObject *Engine::Scene::createString(std::string const &str)
@@ -35,9 +57,23 @@ std::optional<std::string> Engine::Scene::getConstantStringById(size_t id) const
     return m_strings[id];
 }
 
-void Engine::Scene::runNestedFunction(std::string const &name, std::vector<size_t> &callStack)
+Engine::Value Engine::Scene::popFromStackOrError()
+{
+    if (m_operationStack.empty() || m_operationStack.back().empty())
+    {
+        throw Errors::RuntimeError("Can not pop from stack because stack is empty");
+    }
+    return m_operationStack.back().back();
+}
+
+void Engine::Scene::runNestedFunctionByName(std::string const &name, std::vector<size_t> &callStack)
 {
     Runnable::RunnableFunction const &func = m_functions.at(name);
+    runNestedFunction(func, callStack);
+}
+
+void Engine::Scene::runNestedFunction(Runnable::RunnableFunction const &func, std::vector<size_t> &callStack)
+{
     size_t pos = 0;
     m_operationStack.push_back({});
     while (pos < func.bytes.size())
@@ -65,6 +101,11 @@ void Engine::Scene::runNestedFunction(std::string const &name, std::vector<size_
             size_t typeId = parseOperationConstant<int64_t>(func.bytes.begin() + (pos + 1), func.bytes.end());
             pos += sizeof(size_t);
             m_objects.push_back(std::make_unique<GameObject>(m_types[typeId].get(), *this));
+            if (m_objects.back()->getType()->hasMethod("init"))
+            {
+                runNestedFunction(m_objects.back()->getType()->getMethod("init"), callStack);
+            }
+
             m_operationStack.back().push_back(m_objects.back().get());
         }
         break;
@@ -168,6 +209,14 @@ void Engine::Scene::runNestedFunction(std::string const &name, std::vector<size_
             break;
         case Instructions::GetVectorY:
             break;
+        case Instructions::Print:
+        {
+            Value v = popFromStackOrError();
+            std::cout << valueToString(v) << std::endl;
+        }
+        break;
+        default:
+            throw Errors::InvalidInstructionError("Unknown instruction", pos);
         }
         pos++;
     }

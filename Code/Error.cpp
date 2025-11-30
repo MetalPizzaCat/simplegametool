@@ -13,4 +13,3 @@ Code::Errors::ParsingError::ParsingError(std::string const &msg) : m_message(msg
 {
 }
 
-

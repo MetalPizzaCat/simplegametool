@@ -23,6 +23,7 @@ namespace Code
         SetPositionX,
         MakeVector,
         Push,
+        Print,
     };
 
     enum class Keyword
@@ -66,6 +67,7 @@ namespace Code
         {"get_x", FusionInstruction::GetPositionX},
         {"get_y", FusionInstruction::SetPositionX},
         {"make_vector", FusionInstruction::MakeVector},
+        {"print", FusionInstruction::Print},
     };
 
     static const std::map<char, Separator> Separators = {
@@ -123,5 +125,6 @@ namespace Code
         {FusionInstruction::SetPosition, FusionInstructionData{.instruction = Engine::Instructions::SetPosition, .argumentTypes = {}}},
         {FusionInstruction::GetPositionX, FusionInstructionData{.instruction = Engine::Instructions::GetVectorX, .argumentTypes = {}}},
         {FusionInstruction::MakeVector, FusionInstructionData{.instruction = Engine::Instructions::MakeVector, .argumentTypes = {}}},
+        {FusionInstruction::Print, FusionInstructionData{.instruction = Engine::Instructions::Print, .argumentTypes = {}}},
     };
 }

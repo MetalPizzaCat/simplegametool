@@ -17,9 +17,14 @@ namespace Engine
         sf::Vector2f getPosition() const { return m_position; }
 
         virtual void update(float delta);
+
+        std::string const &getName() const { return m_name; }
+
+        ObjectType const *getType() const { return m_type; }
         virtual ~GameObject() = default;
 
     private:
+        std::string m_name;
         std::unique_ptr<AnimatedSprite> m_sprite;
         ObjectType const *m_type;
         sf::Vector2f m_position;

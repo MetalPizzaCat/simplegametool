@@ -28,5 +28,6 @@ enum class Instructions
     MakeVector,
     GetVectorX,
     GetVectorY,
+    Print,
 };
 }

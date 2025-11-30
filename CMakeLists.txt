@@ -42,6 +42,7 @@ add_executable(simplegametool main.cpp
     Engine/Scene.hpp
     Engine/Scene.cpp
     Engine/Value.hpp
+    Engine/Value.cpp
     Engine/Error.hpp
     Engine/Error.cpp
     Engine/AnimatedSprite.hpp

@@ -39,7 +39,7 @@ namespace Code::Fusion
 
         void parseTypeDeclaration();
 
-        void parseFunctionDeclaration();
+        std::pair<std::string, Engine::Runnable::RunnableFunction> parseFunctionDeclaration();
 
         void parseInstruction(FusionInstruction instruction);
 

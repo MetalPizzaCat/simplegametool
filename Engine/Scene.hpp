@@ -25,17 +25,7 @@ namespace Engine
     public:
         explicit Scene(Runnable::RunnableCode const &code);
 
-        void update(float delta)
-        {
-            for (auto const &obj : m_objects)
-            {
-                obj->update(delta);
-            }
-            if (hasFunction("update"))
-            {
-                runFunction("update");
-            }
-        }
+        void update(float delta);
 
         void draw(sf::RenderWindow &window)
         {
@@ -45,7 +35,13 @@ namespace Engine
             }
         }
 
-        void runFunction(std::string const &name);
+        /// @brief Run function with a given name until the function ends
+        /// @param name Name of the function
+        void runFunctionByName(std::string const &name);
+
+        /// @brief Run function from provided bytecode data
+        /// @param func Function data
+        void runFunction(Runnable::RunnableFunction const& func);
 
         void addType(std::string const &name, std::unique_ptr<ObjectType> type)
         {
@@ -81,8 +77,19 @@ namespace Engine
 
         std::optional<std::string> getConstantStringById(size_t id) const;
 
+        Value popFromStackOrError();
+
     private:
-        void runNestedFunction(std::string const &name, std::vector<size_t> &callStack);
+        /// @brief Run nested function from scene method collection using provided callstack
+        /// @param name Name of the function to run
+        /// @param callStack Callstack to use for further nested calls
+        void runNestedFunctionByName(std::string const &name, std::vector<size_t> &callStack);
+
+        /// @brief Run nested function from provided bytecode using provided callstack
+        /// @param func Function data to run
+        /// @param callStack Callstack to use for further nested calls
+        void runNestedFunction(Runnable::RunnableFunction const &func, std::vector<size_t> &callStack);
+
         std::vector<std::vector<Value>> m_operationStack = {{}};
         std::vector<Value> m_variables;
         std::vector<std::string> m_strings;

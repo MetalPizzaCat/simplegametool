@@ -26,6 +26,8 @@ private:
 Engine::Scene loadSceneFromString(std::string const &code)
 {
     Engine::Runnable::RunnableCode sceneCode = Code::Fusion::compileFusionString(code);
+
+
     return Engine::Scene(sceneCode);
 }
 
@@ -77,6 +79,18 @@ type Thing  {
     some_var = 0
     other_val = (0, 0)
     even_more = "wowza"
+
+    func init {
+        push "hello from thing!"
+        print 
+    }
+
+    func update {
+    }
+
+    func clicked {
+        
+    }
 }
 
 func start {
@@ -119,7 +133,7 @@ func update{
         auto window = sf::RenderWindow(sf::VideoMode({(34 * 24u), (25 * 24u)}), "Simple game tool");
         sf::Clock deltaClock;
         window.setFramerateLimit(144);
-        scene.runFunction("start");
+        scene.runFunctionByName("start");
         while (window.isOpen())
         {
             sf::Time deltaTime = deltaClock.restart();

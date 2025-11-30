@@ -13,7 +13,8 @@ void Code::Fusion::FusionCodeGenerator::generate()
         }
         else if (isKeyword(Keyword::Function))
         {
-            parseFunctionDeclaration();
+            auto f = parseFunctionDeclaration();
+            m_builder.addFunction(f.first, f.second);
         }
         consumeEndOfStatement();
     }
@@ -66,13 +67,21 @@ void Code::Fusion::FusionCodeGenerator::parseTypeDeclaration()
 
         consumeEndOfStatement();
     }
+    std::map<std::string, RunnableFunction> methods;
+    // parse methods
+    while (isKeyword(Keyword::Function))
+    {
+        auto method = parseFunctionDeclaration();
+        methods[method.first] = method.second;
+        consumeEndOfStatement();
+    }
 
     consumeSeparator(Separator::BlockClose, "expected '}'");
 
-    m_builder.addType(TypeInfo(name->getId(), spriteName->getAssetName(), fields));
+    m_builder.addType(TypeInfo(name->getId(), spriteName->getAssetName(), fields, methods));
 }
 
-void Code::Fusion::FusionCodeGenerator::parseFunctionDeclaration()
+std::pair<std::string, Engine::Runnable::RunnableFunction> Code::Fusion::FusionCodeGenerator::parseFunctionDeclaration()
 {
     using namespace Engine::Runnable;
     consumeKeyword(Keyword::Function, "Expected 'func'");
@@ -144,8 +153,9 @@ void Code::Fusion::FusionCodeGenerator::parseFunctionDeclaration()
     }
 
     consumeSeparator(Separator::BlockClose, "expected '}'");
-    m_builder.addFunction(name->getId(), Engine::Runnable::RunnableFunction{.argumentCount = 0, .bytes = m_builder.getCurrentBlock().getBytes()});
+    std::vector<uint8_t> temp = m_builder.getCurrentBlock().getBytes();
     m_builder.popBlock();
+    return std::make_pair(name->getId(), Engine::Runnable::RunnableFunction{.argumentCount = 0, .bytes = std::move(temp)});
 }
 
 void Code::Fusion::FusionCodeGenerator::parseInstruction(FusionInstruction instruction)
