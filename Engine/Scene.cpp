@@ -63,7 +63,18 @@ Engine::Value Engine::Scene::popFromStackOrError()
     {
         throw Errors::RuntimeError("Can not pop from stack because stack is empty");
     }
-    return m_operationStack.back().back();
+    Value r = m_operationStack.back().back();
+    m_operationStack.back().pop_back();
+    return r;
+}
+
+void Engine::Scene::pushToStack(Value const &v)
+{
+    if (m_operationStack.empty())
+    {
+        throw Errors::RuntimeError("Can not push to stack because no stack frame is available");
+    }
+    m_operationStack.back().push_back(v);
 }
 
 void Engine::Scene::runNestedFunctionByName(std::string const &name, std::vector<size_t> &callStack)
@@ -106,21 +117,21 @@ void Engine::Scene::runNestedFunction(Runnable::RunnableFunction const &func, st
                 runNestedFunction(m_objects.back()->getType()->getMethod("init"), callStack);
             }
 
-            m_operationStack.back().push_back(m_objects.back().get());
+            pushToStack(m_objects.back().get());
         }
         break;
         case Instructions::PushInt:
-            m_operationStack.back().push_back(parseOperationConstant<int64_t>(func.bytes.begin() + (pos + 1), func.bytes.end()));
+            pushToStack(parseOperationConstant<int64_t>(func.bytes.begin() + (pos + 1), func.bytes.end()));
             pos += sizeof(int64_t);
             break;
         case Instructions::PushFloat:
-            m_operationStack.back().push_back(parseOperationConstant<double>(func.bytes.begin() + (pos + 1), func.bytes.end()));
+            pushToStack(parseOperationConstant<double>(func.bytes.begin() + (pos + 1), func.bytes.end()));
             pos += sizeof(double);
             break;
 
         case Instructions::SetLocal:
         {
-            size_t id = parseOperationConstant<int64_t>(func.bytes.begin() + (pos + 1), func.bytes.end());
+            size_t id = parseOperationConstant<size_t>(func.bytes.begin() + (pos + 1), func.bytes.end());
             pos += sizeof(size_t);
             if (id >= m_variables.size())
             {
@@ -132,9 +143,9 @@ void Engine::Scene::runNestedFunction(Runnable::RunnableFunction const &func, st
         break;
         case Instructions::GetLocal:
         {
-            size_t id = parseOperationConstant<int64_t>(func.bytes.begin() + (pos + 1), func.bytes.end());
+            size_t id = parseOperationConstant<size_t>(func.bytes.begin() + (pos + 1), func.bytes.end());
             pos += sizeof(size_t);
-            m_operationStack.back().push_back(m_variables[id]);
+            pushToStack(m_variables[id]);
         }
         break;
         case Instructions::Add:
@@ -143,9 +154,17 @@ void Engine::Scene::runNestedFunction(Runnable::RunnableFunction const &func, st
             m_operationStack.back().pop_back();
             Value b = m_operationStack.back().back();
             m_operationStack.back().pop_back();
+            if (a.index() != b.index())
+            {
+                throw Errors::RuntimeError("Attempted to perform arithmetic on incompatible types");
+            }
             if (a.index() == ValueType::Vector)
             {
-                m_operationStack.back().push_back(std::get<sf::Vector2f>(a) + std::get<sf::Vector2f>(b));
+                pushToStack(std::get<sf::Vector2f>(a) + std::get<sf::Vector2f>(b));
+            }
+            else if (a.index() == ValueType::Int)
+            {
+                pushToStack(std::get<int64_t>(a) + std::get<int64_t>(b));
             }
         }
         break;
@@ -189,7 +208,7 @@ void Engine::Scene::runNestedFunction(Runnable::RunnableFunction const &func, st
             Value obj = m_operationStack.back().back();
             m_operationStack.back().pop_back();
 
-            m_operationStack.back().push_back(std::get<GameObject *>(obj)->getPosition());
+            pushToStack(std::get<GameObject *>(obj)->getPosition());
         }
         break;
         case Instructions::MakeVector:
@@ -202,7 +221,7 @@ void Engine::Scene::runNestedFunction(Runnable::RunnableFunction const &func, st
             m_operationStack.back().pop_back();
             Value b = m_operationStack.back().back();
             m_operationStack.back().pop_back();
-            m_operationStack.back().push_back(sf::Vector2f(std::get<double>(a), std::get<double>(b)));
+            pushToStack(sf::Vector2f(std::get<double>(a), std::get<double>(b)));
         }
         break;
         case Instructions::GetVectorX:
@@ -215,8 +234,60 @@ void Engine::Scene::runNestedFunction(Runnable::RunnableFunction const &func, st
             std::cout << valueToString(v) << std::endl;
         }
         break;
+        case Instructions::JumpBy:
+        {
+            JumpDistanceType dist = parseOperationConstant<JumpDistanceType>(func.bytes.begin() + (pos + 1), func.bytes.end());
+            pos += dist;
+        }
+        break;
+        case Instructions::JumpByIf:
+        {
+            Value a = popFromStackOrError();
+            if (a.index() != ValueType::Bool)
+            {
+                throw Errors::RuntimeError("Expected boolean value on stack for condition");
+            }
+            if (std::get<bool>(a))
+            {
+                JumpDistanceType dist = parseOperationConstant<JumpDistanceType>(func.bytes.begin() + (pos + 1), func.bytes.end());
+                pos += dist;
+            }
+            else
+            {
+                pos += sizeof(JumpDistanceType);
+            }
+        }
+        break;
+        case Instructions::Equals:
+            break;
+        case Instructions::NotEquals:
+            break;
+        case Instructions::More:
+            break;
+        case Instructions::Less:
+        {
+            Value b = popFromStackOrError();
+            Value a = popFromStackOrError();
+            if (a.index() != b.index())
+            {
+                throw Errors::RuntimeError("Attempted to perform comparison on two different types");
+            }
+            if (a.index() == ValueType::Int)
+            {
+                pushToStack(std::get<int64_t>(a) < std::get<int64_t>(b));
+            }
+            else
+            {
+                throw Errors::RuntimeError("Attempted to perform comparison on incompatible types");
+            }
+        }
+        break;
+        case Instructions::MoreOrEquals:
+            break;
+        case Instructions::LessOrEquals:
+            break;
         default:
-            throw Errors::InvalidInstructionError("Unknown instruction", pos);
+            throw Errors::InvalidInstructionError(std::string("Unknown instruction with value ") + std::to_string(func.bytes.at(pos)), pos);
         }
         pos++;
     }

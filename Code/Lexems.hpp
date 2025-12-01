@@ -23,7 +23,15 @@ namespace Code
         SetPositionX,
         MakeVector,
         Push,
+        Jump,
+        JumpIf,
         Print,
+        Equals,
+        NotEquals,
+        More,
+        Less,
+        MoreOrEquals,
+        LessOrEquals,
     };
 
     enum class Keyword
@@ -67,7 +75,15 @@ namespace Code
         {"get_x", FusionInstruction::GetPositionX},
         {"get_y", FusionInstruction::SetPositionX},
         {"make_vector", FusionInstruction::MakeVector},
+        {"jump", FusionInstruction::Jump},
+        {"jump_if", FusionInstruction::JumpIf},
         {"print", FusionInstruction::Print},
+        {"eq", FusionInstruction::Equals},
+        {"neq", FusionInstruction::NotEquals},
+        {"less", FusionInstruction::Less},
+        {"more", FusionInstruction::More},
+        {"more_eq", FusionInstruction::MoreOrEquals},
+        {"less_eq", FusionInstruction::LessOrEquals},
     };
 
     static const std::map<char, Separator> Separators = {
@@ -126,5 +142,11 @@ namespace Code
         {FusionInstruction::GetPositionX, FusionInstructionData{.instruction = Engine::Instructions::GetVectorX, .argumentTypes = {}}},
         {FusionInstruction::MakeVector, FusionInstructionData{.instruction = Engine::Instructions::MakeVector, .argumentTypes = {}}},
         {FusionInstruction::Print, FusionInstructionData{.instruction = Engine::Instructions::Print, .argumentTypes = {}}},
+        {FusionInstruction::Equals, FusionInstructionData{.instruction = Engine::Instructions::Equals, .argumentTypes = {}}},
+        {FusionInstruction::NotEquals, FusionInstructionData{.instruction = Engine::Instructions::NotEquals, .argumentTypes = {}}},
+        {FusionInstruction::More, FusionInstructionData{.instruction = Engine::Instructions::More, .argumentTypes = {}}},
+        {FusionInstruction::Less, FusionInstructionData{.instruction = Engine::Instructions::Less, .argumentTypes = {}}},
+        {FusionInstruction::MoreOrEquals, FusionInstructionData{.instruction = Engine::Instructions::MoreOrEquals, .argumentTypes = {}}},
+        {FusionInstruction::LessOrEquals, FusionInstructionData{.instruction = Engine::Instructions::LessOrEquals, .argumentTypes = {}}},
     };
 }

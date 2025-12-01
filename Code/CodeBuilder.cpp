@@ -1,5 +1,7 @@
 #include "CodeBuilder.hpp"
 #include <algorithm>
+#include "../Engine/Instructions.hpp"
+#include "Error.hpp"
 size_t Code::CodeBuilder::addType(Engine::Runnable::TypeInfo const &type)
 {
     m_types.push_back(type);
@@ -53,4 +55,53 @@ void Code::CodeBuilder::addFunction(std::string const &name, Engine::Runnable::R
 void Code::CodeBlock::insert(std::vector<uint8_t> const &bytes)
 {
     m_bytes.insert(m_bytes.end(), bytes.begin(), bytes.end());
+}
+
+void Code::CodeBlock::reserveBytesForJump()
+{
+    for (size_t i = 0; i < sizeof(Engine::JumpDistanceType); i++)
+    {
+        m_bytes.push_back(0);
+    }
+}
+
+void Code::CodeBlock::addLabelPosition(std::string const &name, size_t pos)
+{
+    m_jumpLabelLocations[name] = pos;
+}
+
+void Code::CodeBlock::applyLabels()
+{
+    for (std::pair<std::string, std::vector<CodeJumpInfo>> jumps : m_jumpLabelDestinations)
+    {
+        // don't bother with checks or logic if there is nothing that even uses that label
+        // TODO: Maybe issue a warning somehow?
+        if (jumps.second.empty())
+        {
+            continue;
+        }
+        if (!m_jumpLabelLocations.contains(jumps.first))
+        {
+            throw Errors::ParsingError(jumps.second.front().row, jumps.second.front().column, std::string("Can not find label '" + jumps.first + "'"));
+        }
+        Engine::JumpDistanceType dest = (Engine::JumpDistanceType)m_jumpLabelLocations[jumps.first];
+        for (CodeJumpInfo const &jump : jumps.second)
+        {
+            Engine::JumpDistanceType amount = dest - (Engine::JumpDistanceType)jump.byteCodeDestination;
+            std::vector<uint8_t> addr = parseToBytes(dest - (Engine::JumpDistanceType)jump.byteCodeDestination);
+            for(size_t i = 0; i < sizeof(Engine::JumpDistanceType); i++)
+            {
+                m_bytes[jump.byteCodeDestination + i] = addr[i];
+            }
+        }
+    }
+}
+
+void Code::CodeBlock::addLabelDestination(std::string const &labelname, size_t jumpAddressBytesPosition, size_t codeColumn, size_t codeRow)
+{
+    if (!m_jumpLabelDestinations.contains(labelname))
+    {
+        m_jumpLabelDestinations[labelname] = {};
+    }
+    m_jumpLabelDestinations[labelname].push_back(CodeJumpInfo{.byteCodeDestination = jumpAddressBytesPosition, .column = codeColumn, .row = codeRow});
 }

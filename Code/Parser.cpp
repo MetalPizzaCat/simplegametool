@@ -29,6 +29,10 @@ std::vector<std::unique_ptr<Code::Token>> Code::Parser::parseTokens()
         {
             tokens.push_back(std::move(str));
         }
+        else if (std::unique_ptr<LabelToken> label = parseLabel(); label != nullptr)
+        {
+            tokens.push_back(std::move(label));
+        }
         else if (std::unique_ptr<IdToken> id = parseId(); id != nullptr)
         {
             tokens.push_back(std::move(id));
@@ -57,7 +61,7 @@ std::vector<std::unique_ptr<Code::Token>> Code::Parser::parseTokens()
 
 void Code::Parser::advance()
 {
-    m_current++;
+
     if (m_current != m_end)
     {
         if (*m_current == '\n')
@@ -69,6 +73,7 @@ void Code::Parser::advance()
         {
             m_column++;
         }
+        m_current++;
     }
 }
 
@@ -186,6 +191,26 @@ std::unique_ptr<Code::IdToken> Code::Parser::parseId()
     return std::make_unique<IdToken>(m_row, m_column, id);
 }
 
+std::unique_ptr<Code::LabelToken> Code::Parser::parseLabel()
+{
+    // must start with a character or underscore
+    if (std::optional<char> ch = getCurrent(); !ch.has_value() || ch.value() != '%')
+    {
+        return nullptr;
+    }
+    advance();
+    std::string id;
+    for (; !isAtTheEnd() && (std::isalnum(*m_current) || *m_current == '_') && *m_current != ':'; advance())
+    {
+        id += *m_current;
+    }
+    if (id == "")
+    {
+        throw Errors::ParsingError(m_column, m_row, "Expected label name");
+    }
+    return std::make_unique<LabelToken>(m_row, m_column, id);
+}
+
 std::unique_ptr<Code::StringToken> Code::Parser::parseString()
 {
     if (isAtTheEnd() || *m_current != '"')
@@ -216,8 +241,7 @@ std::unique_ptr<Code::StringToken> Code::Parser::parseString()
 
 std::unique_ptr<Code::AssetRefToken> Code::Parser::parseAssetRef()
 {
-    // must start with a character or underscore
-    if (isAtTheEnd() || (*m_current) != '@')
+    if (std::optional<char> ch = getCurrent(); !ch.has_value() || ch.value() != '@')
     {
         return nullptr;
     }
@@ -229,7 +253,7 @@ std::unique_ptr<Code::AssetRefToken> Code::Parser::parseAssetRef()
     }
     if (id == "")
     {
-        return nullptr;
+        throw Errors::ParsingError(m_column, m_row, "Expected asset name");
     }
     return std::make_unique<AssetRefToken>(m_row, m_column, id);
 }

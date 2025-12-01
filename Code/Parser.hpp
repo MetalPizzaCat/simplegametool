@@ -41,6 +41,8 @@ namespace Code
         std::unique_ptr<KeywordToken> parseKeyword();
 
         std::unique_ptr<IdToken> parseId();
+
+        std::unique_ptr<LabelToken> parseLabel();
         
         std::unique_ptr<StringToken> parseString();
 

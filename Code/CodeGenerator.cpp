@@ -96,6 +96,19 @@ std::pair<std::string, Engine::Runnable::RunnableFunction> Code::Fusion::FusionC
         {
             break;
         }
+        if (isOfType<LabelToken>())
+        {
+            LabelToken const *t = getTokenOrError<LabelToken>("Expected label");
+            advance();
+            consumeSeparator(Separator::Colon, "Expected ':' at the end of label declaration");
+            if (m_builder.getCurrentBlock().labelExists(t->getId()))
+            {
+                error("Jump label redefinition");
+            }
+            m_builder.getCurrentBlock().addLabelPosition(t->getId(), m_builder.getCurrentBlock().getBytes().size());
+            consumeEndOfStatementOrError("Expected new line or ';'");
+            continue;
+        }
         InstructionToken const *token = getTokenOrError<InstructionToken>("Expected instruction");
         advance();
         // push is only special instruction type because each variant is its own opcode
@@ -146,6 +159,24 @@ std::pair<std::string, Engine::Runnable::RunnableFunction> Code::Fusion::FusionC
             m_builder.getCurrentBlock().insert(bytes);
             consumeEndOfStatementOrError("Expected new line or ';'");
         }
+        // jump is handled entirely differently because it works using relative offsets
+        else if (token->getInstruction() == FusionInstruction::Jump || token->getInstruction() == FusionInstruction::JumpIf)
+        {
+            LabelToken const *dest = getTokenOrError<LabelToken>("Expected destination for jump");
+            advance();
+            consumeEndOfStatementOrError("Expected new line or ';'");
+            if (token->getInstruction() == FusionInstruction::Jump)
+            {
+                m_builder.getCurrentBlock().insert({(uint8_t)Engine::Instructions::JumpBy});
+            }
+            else
+            {
+                m_builder.getCurrentBlock().insert({(uint8_t)Engine::Instructions::JumpByIf});
+            }
+            m_builder.getCurrentBlock().addLabelDestination(dest->getId(), m_builder.getCurrentBlock().getBytes().size(), dest->getColumn(), dest->getRow());
+
+            m_builder.getCurrentBlock().reserveBytesForJump();
+        }
         else
         {
             parseInstruction(token->getInstruction());
@@ -153,6 +184,7 @@ std::pair<std::string, Engine::Runnable::RunnableFunction> Code::Fusion::FusionC
     }
 
     consumeSeparator(Separator::BlockClose, "expected '}'");
+    m_builder.getCurrentBlock().applyLabels();
     std::vector<uint8_t> temp = m_builder.getCurrentBlock().getBytes();
     m_builder.popBlock();
     return std::make_pair(name->getId(), Engine::Runnable::RunnableFunction{.argumentCount = 0, .bytes = std::move(temp)});

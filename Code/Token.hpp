@@ -82,6 +82,19 @@ namespace Code
         std::string m_str;
     };
 
+     class LabelToken : public Token
+    {
+    public:
+        explicit LabelToken(size_t row, size_t column, std::string const &str) : Token(row, column), m_str(str) {}
+
+        std::string toString() const override;
+
+        std::string const &getId() const { return m_str; }
+
+    private:
+        std::string m_str;
+    };
+
     class AssetRefToken : public Token
     {
     public:

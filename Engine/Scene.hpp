@@ -79,6 +79,8 @@ namespace Engine
 
         Value popFromStackOrError();
 
+        void pushToStack(Value const& v);
+
     private:
         /// @brief Run nested function from scene method collection using provided callstack
         /// @param name Name of the function to run

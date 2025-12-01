@@ -24,6 +24,16 @@ namespace Code
         return res;
     }
 
+    struct CodeJumpInfo
+    {
+        /// @brief Where does the jump value need to be written
+        size_t byteCodeDestination;
+        /// @brief Column where the jump occurred from for error displaying purposes
+        size_t column;
+        /// @brief Row where the jump occurred from for error displaying purposes
+        size_t row;
+    };
+
     class CodeBlock
     {
     public:
@@ -33,8 +43,23 @@ namespace Code
 
         std::vector<uint8_t> const &getBytes() const { return m_bytes; }
 
+        /// @brief Generate a row of 0s equal to the size of the jump size type
+        void reserveBytesForJump();
+
+        void addLabelPosition(std::string const &name, size_t pos);
+
+        /// @brief Check if given label has already been added to the code
+        /// @param name Name of the label 
+        /// @return 
+        bool labelExists(std::string const &name) const { return m_jumpLabelLocations.contains(name); }
+
+        /// @brief Write correct jump info into the resevered address spaces
+        void applyLabels();
+
+        void addLabelDestination(std::string const& labelname, size_t jumpAddressBytesPosition, size_t codeColumn, size_t codeRow);
+
     private:
-        std::map<std::string, std::vector<size_t>> m_jumpLabelDestinations;
+        std::map<std::string, std::vector<CodeJumpInfo>> m_jumpLabelDestinations;
         std::map<std::string, size_t> m_jumpLabelLocations;
         std::vector<uint8_t> m_bytes;
     };
@@ -57,6 +82,7 @@ namespace Code
 
         void createBlock();
 
+        /// @brief Pop the current bytecode context block
         void popBlock();
 
         void addFunction(std::string const &name, Engine::Runnable::RunnableFunction func);

@@ -22,31 +22,51 @@ std::string Code::InstructionToken::toString() const
     switch (m_instruction)
     {
     case FusionInstruction::CreateInstance:
-        return "CreateInstance";
+        return "OP(CreateInstance)";
     case FusionInstruction::Set:
-        return "Set";
+        return "OP(Set)";
     case FusionInstruction::Get:
-        return "Get";
+        return "OP(Get)";
     case FusionInstruction::Add:
-        return "Add";
+        return "OP(Add)";
     case FusionInstruction::Sub:
-        return "Sub";
+        return "OP(Sub)";
     case FusionInstruction::Mul:
-        return "Mul";
+        return "OP(Mul)";
     case FusionInstruction::Div:
-        return "Div";
+        return "OP(Div)";
     case FusionInstruction::Call:
-        return "Call";
+        return "OP(Call)";
     case FusionInstruction::GetPosition:
-        return "GetPosition";
+        return "OP(GetPosition)";
     case FusionInstruction::SetPosition:
-        return "SetPosition";
+        return "OP(SetPosition)";
     case FusionInstruction::GetPositionX:
-        return "GetPositionX";
+        return "OP(GetPositionX)";
     case FusionInstruction::SetPositionX:
-        return "SetPositionX";
+        return "OP(SetPositionX)";
     case FusionInstruction::MakeVector:
-        return "MakeVector";
+        return "OP(MakeVector)";
+    case FusionInstruction::Push:
+        return "OP(Push)";
+    case FusionInstruction::Jump:
+        return "OP(Jump)";
+    case FusionInstruction::JumpIf:
+        return "OP(JumpIf)";
+    case FusionInstruction::Print:
+        return "OP(Print)";
+    case FusionInstruction::Equals:
+        return "OP(Equals)";
+    case FusionInstruction::NotEquals:
+        return "OP(NotEquals)";
+    case FusionInstruction::More:
+        return "OP(More)";
+    case FusionInstruction::Less:
+        return "OP(Less)";
+    case FusionInstruction::MoreOrEquals:
+        return "OP(MoreOrEquals)";
+    case FusionInstruction::LessOrEquals:
+        return "OP(LessOrEquals)";
     }
     return "Unknown";
 }
@@ -104,4 +124,9 @@ std::string Code::SeparatorToken::toString() const
 std::string Code::AssetRefToken::toString() const
 {
     return std::string("ASSET(") + m_assetName + ")";
+}
+
+std::string Code::LabelToken::toString() const
+{
+    return std::string("LABEL(") + m_str + ")";
 }
