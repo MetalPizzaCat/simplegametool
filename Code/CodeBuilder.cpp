@@ -2,6 +2,9 @@
 #include <algorithm>
 #include "../Engine/Instructions.hpp"
 #include "Error.hpp"
+Code::CodeBuilder::CodeBuilder() : m_types({Engine::Runnable::TypeInfo("std", "", {}, {})})
+{
+}
 size_t Code::CodeBuilder::addType(Engine::Runnable::TypeInfo const &type)
 {
     m_types.push_back(type);
@@ -89,7 +92,7 @@ void Code::CodeBlock::applyLabels()
         {
             Engine::JumpDistanceType amount = dest - (Engine::JumpDistanceType)jump.byteCodeDestination;
             std::vector<uint8_t> addr = parseToBytes(dest - (Engine::JumpDistanceType)jump.byteCodeDestination);
-            for(size_t i = 0; i < sizeof(Engine::JumpDistanceType); i++)
+            for (size_t i = 0; i < sizeof(Engine::JumpDistanceType); i++)
             {
                 m_bytes[jump.byteCodeDestination + i] = addr[i];
             }

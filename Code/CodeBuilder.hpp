@@ -67,6 +67,7 @@ namespace Code
     class CodeBuilder
     {
     public:
+        explicit CodeBuilder();
         size_t addType(Engine::Runnable::TypeInfo const &type);
 
         std::optional<size_t> getTypeByName(std::string const &name);

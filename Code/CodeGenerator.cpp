@@ -55,6 +55,7 @@ void Code::Fusion::FusionCodeGenerator::parseTypeDeclaration()
     consumeSeparator(Separator::Equals, "Expected '='");
     AssetRefToken const *spriteName = getTokenOrError<AssetRefToken>("Expected sprite name");
     advance();
+    consumeEndOfStatement();
     std::map<std::string, CodeConstantValue> fields;
     IdToken const *fieldTok = nullptr;
     while ((fieldTok = dynamic_cast<IdToken const *>(getCurrent())) != nullptr)
@@ -194,7 +195,7 @@ void Code::Fusion::FusionCodeGenerator::parseInstruction(FusionInstruction instr
 {
     if (!FusionInstructionsData.contains(instruction))
     {
-        error("Unknown unrecognised instruction");
+        error("Unsupported instruction");
         return;
     }
     FusionInstructionData const *data = &FusionInstructionsData.at(instruction);
@@ -249,7 +250,32 @@ void Code::Fusion::FusionCodeGenerator::parseInstruction(FusionInstruction instr
         }
         break;
         case InstructionArgumentType::FunctionName:
-            break;
+        {
+            size_t id = m_builder.getOrAddStringId(getTokenOrError<IdToken>("Expected function name")->getId());
+            std::vector<uint8_t> b = parseToBytes(id);
+            bytes.insert(bytes.end(), b.begin(), b.end());
+        }
+        break;
+        case InstructionArgumentType::MethodName:
+        {
+            if (std::optional<size_t> id = m_builder.getTypeByName(getTokenOrError<IdToken>("Expected type name")->getId()); id.has_value())
+            {
+                advance();
+                std::vector<uint8_t> b = parseToBytes(id.value());
+                bytes.insert(bytes.end(), b.begin(), b.end());
+                consumeSeparator(Separator::Colon, "Expected '::'");
+                consumeSeparator(Separator::Colon, "Expected '::'");
+
+                size_t nameId = m_builder.getOrAddStringId(getTokenOrError<IdToken>("Expected function name")->getId());
+                b = parseToBytes(nameId);
+                bytes.insert(bytes.end(), b.begin(), b.end());
+            }
+            else
+            {
+                error("Unknown type '" + getTokenOrError<IdToken>("Expected type name")->getId() + "'");
+            }
+        }
+        break;
         }
         advance();
         optionallyConsumeSeparator(Separator::Comma);

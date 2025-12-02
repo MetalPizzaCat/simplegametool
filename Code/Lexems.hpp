@@ -16,7 +16,6 @@ namespace Code
         Sub,
         Mul,
         Div,
-        Call,
         GetPosition,
         SetPosition,
         GetPositionX,
@@ -32,6 +31,11 @@ namespace Code
         Less,
         MoreOrEquals,
         LessOrEquals,
+        Call,
+        CallMethod,
+        CallMethodStatic,
+        Return,
+        End
     };
 
     enum class Keyword
@@ -84,7 +88,11 @@ namespace Code
         {"more", FusionInstruction::More},
         {"more_eq", FusionInstruction::MoreOrEquals},
         {"less_eq", FusionInstruction::LessOrEquals},
-    };
+        {"call", FusionInstruction::Call},
+        {"call_method", FusionInstruction::CallMethod},
+        {"call_method_static", FusionInstruction::CallMethod},
+        {"ret", FusionInstruction::Return},
+        {"end", FusionInstruction::End}};
 
     static const std::map<char, Separator> Separators = {
         {':', Separator::Colon},
@@ -119,7 +127,8 @@ namespace Code
         Float,
         String,
         ObjectType,
-        FunctionName
+        FunctionName,
+        MethodName
     };
 
     struct FusionInstructionData
@@ -136,7 +145,6 @@ namespace Code
         {FusionInstruction::Sub, FusionInstructionData{.instruction = Engine::Instructions::Sub, .argumentTypes = {}}},
         {FusionInstruction::Mul, FusionInstructionData{.instruction = Engine::Instructions::Mul, .argumentTypes = {}}},
         {FusionInstruction::Div, FusionInstructionData{.instruction = Engine::Instructions::Div, .argumentTypes = {}}},
-        {FusionInstruction::Call, FusionInstructionData{.instruction = Engine::Instructions::Call, .argumentTypes = {}}},
         {FusionInstruction::GetPosition, FusionInstructionData{.instruction = Engine::Instructions::GetPosition, .argumentTypes = {}}},
         {FusionInstruction::SetPosition, FusionInstructionData{.instruction = Engine::Instructions::SetPosition, .argumentTypes = {}}},
         {FusionInstruction::GetPositionX, FusionInstructionData{.instruction = Engine::Instructions::GetVectorX, .argumentTypes = {}}},
@@ -148,5 +156,11 @@ namespace Code
         {FusionInstruction::Less, FusionInstructionData{.instruction = Engine::Instructions::Less, .argumentTypes = {}}},
         {FusionInstruction::MoreOrEquals, FusionInstructionData{.instruction = Engine::Instructions::MoreOrEquals, .argumentTypes = {}}},
         {FusionInstruction::LessOrEquals, FusionInstructionData{.instruction = Engine::Instructions::LessOrEquals, .argumentTypes = {}}},
+        {FusionInstruction::Return, FusionInstructionData{.instruction = Engine::Instructions::Return, .argumentTypes = {}}},
+        {FusionInstruction::End, FusionInstructionData{.instruction = Engine::Instructions::ExitFunction, .argumentTypes = {}}},
+        {FusionInstruction::Call, FusionInstructionData{.instruction = Engine::Instructions::CallFunction, .argumentTypes = {InstructionArgumentType::FunctionName}}},
+        {FusionInstruction::CallMethod, FusionInstructionData{.instruction = Engine::Instructions::CallMethod, .argumentTypes = {InstructionArgumentType::MethodName}}},
+        {FusionInstruction::CallMethodStatic, FusionInstructionData{.instruction = Engine::Instructions::CallMethodStatic, .argumentTypes = {InstructionArgumentType::MethodName}}},
+        {FusionInstruction::Return, FusionInstructionData{.instruction = Engine::Instructions::Return, .argumentTypes = {}}},
     };
 }

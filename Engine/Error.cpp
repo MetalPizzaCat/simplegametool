@@ -2,7 +2,7 @@
 
 const char *Engine::Errors::RuntimeError::what() const throw()
 {
-    return nullptr;
+    return m_message.c_str();
 }
 
 Engine::Errors::RuntimeError::RuntimeError(std::string const &msg) : m_message(msg)

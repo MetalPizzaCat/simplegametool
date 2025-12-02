@@ -20,8 +20,6 @@ namespace Engine
         Mul,
         And,
         Or,
-        Call,
-        Return,
         // assign position of object on the stack to the value from the stack
         SetPosition,
         // push position of the object on the stack
@@ -40,5 +38,15 @@ namespace Engine
         Less,
         MoreOrEquals,
         LessOrEquals,
+        // Call method of a given type by name
+        CallMethod,
+        // Call method of a given type by name, without passing "self" to method 
+        CallMethodStatic,
+        // Call function of a scene
+        CallFunction,
+        // Exit function without returning a value
+        ExitFunction,
+        // Return value from a function and  exit 
+        Return
     };
 }

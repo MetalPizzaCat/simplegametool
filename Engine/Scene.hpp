@@ -25,6 +25,8 @@ namespace Engine
     public:
         explicit Scene(Runnable::RunnableCode const &code);
 
+        /// @brief Update all objects present in the scene and run their user defined update functions
+        /// @param delta 
         void update(float delta);
 
         void draw(sf::RenderWindow &window)
@@ -77,23 +79,33 @@ namespace Engine
 
         std::optional<std::string> getConstantStringById(size_t id) const;
 
+        std::optional<std::string> getTypeNameById(size_t id) const;
+
+        /// @brief Pop value from current stack frame or throw error if no stack frame exists or stack is empty
         Value popFromStackOrError();
 
+        /// @brief Set value of the variable in the current block
+        /// @param id Id of the variable(block will be resized to fit)
+        /// @param val Value to assign
+        void setVariableValue(size_t id, Value const& val);
+
+        /// @brief Get value of variable with given id in current block
+        /// @param id Id of the variable 
+        /// @return Value or None if no block or variable is present
+        std::optional<Value> getVariableValue(size_t id) const;
+
+        void createVariableBlock();
+
+        void popVariableBlock();
+
+        /// @brief Push value onto the currect stack, or throw error if no stack exists
+        /// @param v Value to push
         void pushToStack(Value const& v);
 
     private:
-        /// @brief Run nested function from scene method collection using provided callstack
-        /// @param name Name of the function to run
-        /// @param callStack Callstack to use for further nested calls
-        void runNestedFunctionByName(std::string const &name, std::vector<size_t> &callStack);
-
-        /// @brief Run nested function from provided bytecode using provided callstack
-        /// @param func Function data to run
-        /// @param callStack Callstack to use for further nested calls
-        void runNestedFunction(Runnable::RunnableFunction const &func, std::vector<size_t> &callStack);
 
         std::vector<std::vector<Value>> m_operationStack = {{}};
-        std::vector<Value> m_variables;
+        std::vector<std::vector<Value>> m_variables;
         std::vector<std::string> m_strings;
         std::map<std::string, size_t> m_typeNames;
         std::vector<std::unique_ptr<ObjectType>> m_types;

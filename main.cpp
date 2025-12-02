@@ -122,30 +122,26 @@ func update{
     )CODE";
 
     std::string code = R"CODE(
+type Thing{
+    sprite = @img1
+    what = 0
+    func hi{
+        push "static hi!"
+        print
+    }
+}
+
 func init{ 
-    push 0
-    set 0
-    push 4
-    push 1
-    less
-    jump_if %end
-    %l1:
-        get 0
-        print
-        get 0
-        push 1
-        add
-        set 0
-        get 0
-        push 10
-        less
-        jump_if %l1
-    push "over"
+    push 4.0
+    call_method_static std::sqrt
+    print 
+    call custom
+}
+
+func custom{
+    call_method_static Thing::hi
+    push "custom"
     print
-    %end:
-        push "truly over"
-        print
-   
 }
 
 func update{
@@ -196,6 +192,10 @@ func update{
         displayError(e.getColumn(), e.getLine(), code, e.what());
     }
     catch (Engine::Errors::InvalidInstructionError e)
+    {
+        displayError(0, 0, code, e.what());
+    }
+    catch (Engine::Errors::RuntimeError e)
     {
         displayError(0, 0, code, e.what());
     }

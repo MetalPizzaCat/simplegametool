@@ -1,8 +1,16 @@
 #include "Scene.hpp"
 #include "Error.hpp"
+#include "StandardLibrary.hpp"
 
 Engine::Scene::Scene(Runnable::RunnableCode const &code) : m_strings(code.strings), m_functions(code.functions)
 {
+    // special type that will be used to represent standard library functions and constants
+    // should always exist as type 0, for sake of simplicity
+    addType("std", std::make_unique<ObjectType>(nullptr,
+                                                nullptr,
+                                                std::map<std::string, Runnable::CodeConstantValue>(),
+                                                std::map<std::string, Runnable::RunnableFunction>(),
+                                                std::map<std::string, std::function<void(Scene & scene)>>{{"sqrt", Standard::sqrt}}));
     for (Runnable::TypeInfo const &type : code.types)
     {
         addType(type.getName(), std::make_unique<ObjectType>(ContentManager::getInstance().getAsset(type.getSpriteName()), type.getFields(), type.getMethods()));
@@ -25,23 +33,6 @@ void Engine::Scene::update(float delta)
     }
 }
 
-void Engine::Scene::runFunctionByName(std::string const &name)
-{
-    if (!m_functions.contains(name))
-    {
-        throw std::runtime_error("no function with given name found");
-    }
-    std::vector<size_t> callStack;
-    runNestedFunctionByName(name, callStack);
-    // std::cout << "Finished running " << name << std::endl;
-}
-
-void Engine::Scene::runFunction(Runnable::RunnableFunction const &func)
-{
-    std::vector<size_t> callStack;
-    runNestedFunction(func, callStack);
-}
-
 Engine::StringObject *Engine::Scene::createString(std::string const &str)
 {
     m_memory.push_back(std::make_unique<StringObject>(str));
@@ -57,6 +48,14 @@ std::optional<std::string> Engine::Scene::getConstantStringById(size_t id) const
     return m_strings[id];
 }
 
+std::optional<std::string> Engine::Scene::getTypeNameById(size_t id) const
+{
+    std::map<std::string, size_t>::const_iterator it = std::find_if(m_typeNames.begin(), m_typeNames.end(), [id](auto const &t)
+                                                                    { return t.second == id; });
+
+    return it == m_typeNames.end() ? std::optional<std::string>{} : it->first;
+}
+
 Engine::Value Engine::Scene::popFromStackOrError()
 {
     if (m_operationStack.empty() || m_operationStack.back().empty())
@@ -68,6 +67,40 @@ Engine::Value Engine::Scene::popFromStackOrError()
     return r;
 }
 
+void Engine::Scene::setVariableValue(size_t id, Value const &val)
+{
+    if (m_variables.empty())
+    {
+        throw Errors::RuntimeError("No variable block is present");
+    }
+    std::vector<Value> &frame = m_variables.back();
+    if (id > frame.size())
+    {
+        frame.resize(id + 1);
+    }
+    // TODO: handle ref counting for assigning/overwriting values
+    frame[id] = val;
+}
+
+std::optional<Engine::Value> Engine::Scene::getVariableValue(size_t id) const
+{
+    if (m_variables.empty() || id >= m_variables.size())
+    {
+        return {};
+    }
+    return m_variables.back().at(id);
+}
+
+void Engine::Scene::createVariableBlock()
+{
+    m_variables.push_back({});
+}
+
+void Engine::Scene::popVariableBlock()
+{
+    m_variables.pop_back();
+}
+
 void Engine::Scene::pushToStack(Value const &v)
 {
     if (m_operationStack.empty())
@@ -77,15 +110,20 @@ void Engine::Scene::pushToStack(Value const &v)
     m_operationStack.back().push_back(v);
 }
 
-void Engine::Scene::runNestedFunctionByName(std::string const &name, std::vector<size_t> &callStack)
+void Engine::Scene::runFunctionByName(std::string const &name)
 {
     Runnable::RunnableFunction const &func = m_functions.at(name);
-    runNestedFunction(func, callStack);
+    runFunction(func);
 }
 
-void Engine::Scene::runNestedFunction(Runnable::RunnableFunction const &func, std::vector<size_t> &callStack)
+void Engine::Scene::runFunction(Runnable::RunnableFunction const &func)
 {
     size_t pos = 0;
+    createVariableBlock();
+    for (size_t i = 0; i < func.argumentCount; i++)
+    {
+        setVariableValue(i, popFromStackOrError());
+    }
     m_operationStack.push_back({});
     while (pos < func.bytes.size())
     {
@@ -114,7 +152,7 @@ void Engine::Scene::runNestedFunction(Runnable::RunnableFunction const &func, st
             m_objects.push_back(std::make_unique<GameObject>(m_types[typeId].get(), *this));
             if (m_objects.back()->getType()->hasMethod("init"))
             {
-                runNestedFunction(m_objects.back()->getType()->getMethod("init"), callStack);
+                runFunction(m_objects.back()->getType()->getMethod("init"));
             }
 
             pushToStack(m_objects.back().get());
@@ -137,7 +175,7 @@ void Engine::Scene::runNestedFunction(Runnable::RunnableFunction const &func, st
             {
                 m_variables.resize(id + 1);
             }
-            m_variables[id] = m_operationStack.back().back();
+            setVariableValue(id, m_operationStack.back().back());
             m_operationStack.back().pop_back();
         }
         break;
@@ -145,7 +183,14 @@ void Engine::Scene::runNestedFunction(Runnable::RunnableFunction const &func, st
         {
             size_t id = parseOperationConstant<size_t>(func.bytes.begin() + (pos + 1), func.bytes.end());
             pos += sizeof(size_t);
-            pushToStack(m_variables[id]);
+            if (std::optional<Value> var = getVariableValue(id); var.has_value())
+            {
+                pushToStack(var.value());
+            }
+            else
+            {
+                throw Errors::RuntimeError("No variable with id '" + std::to_string(id) + "'is present in current context");
+            }
         }
         break;
         case Instructions::Add:
@@ -178,21 +223,7 @@ void Engine::Scene::runNestedFunction(Runnable::RunnableFunction const &func, st
             break;
         case Instructions::Or:
             break;
-        case Instructions::Call:
             break;
-        case Instructions::Return:
-        {
-            if (callStack.empty())
-            {
-                return;
-            }
-            else
-            {
-                pos = callStack.back();
-                callStack.pop_back();
-            }
-        }
-        break;
         case Instructions::SetPosition:
         {
             Value pos = m_operationStack.back().back();
@@ -286,9 +317,100 @@ void Engine::Scene::runNestedFunction(Runnable::RunnableFunction const &func, st
             break;
         case Instructions::LessOrEquals:
             break;
+        case Instructions::CallMethod:
+        {
+            size_t typeId = parseOperationConstant<size_t>(func.bytes.begin() + (pos + 1), func.bytes.end());
+            pos += sizeof(size_t);
+            size_t id = parseOperationConstant<size_t>(func.bytes.begin() + pos + 1, func.bytes.end());
+            pos += sizeof(size_t);
+            if (typeId >= m_types.size())
+            {
+                throw Errors::RuntimeError("Invalid typeid. No type with id '" + std::to_string(typeId) + "' present");
+            }
+            if (std::optional<std::string> nameStr = getConstantStringById(id); nameStr.has_value())
+            {
+                if (m_types[typeId]->isNativeMethod(nameStr.value()))
+                {
+                    m_types[typeId]->callNativeMethod(nameStr.value(), *this);
+                }
+                else if (m_types[typeId]->hasMethod(nameStr.value()))
+                {
+                    runFunction(m_types[typeId]->getMethod(nameStr.value()));
+                }
+                else
+                {
+                    throw Errors::RuntimeError("No method with name '" + nameStr.value() + "' in type '" + getTypeNameById(typeId).value() + "'");
+                }
+            }
+            else
+            {
+                throw Errors::RuntimeError("Invalid string constant id");
+            }
+        }
+        break;
+        case Instructions::CallMethodStatic:
+        {
+            size_t typeId = parseOperationConstant<size_t>(func.bytes.begin() + (pos + 1), func.bytes.end());
+            pos += sizeof(size_t);
+            size_t id = parseOperationConstant<size_t>(func.bytes.begin() + pos + 1, func.bytes.end());
+            pos += sizeof(size_t);
+            if (typeId >= m_types.size())
+            {
+                throw Errors::RuntimeError("Invalid typeid. No type with id '" + std::to_string(typeId) + "' present");
+            }
+            if (std::optional<std::string> nameStr = getConstantStringById(id); nameStr.has_value())
+            {
+                if (m_types[typeId]->isNativeMethod(nameStr.value()))
+                {
+                    m_types[typeId]->callNativeMethod(nameStr.value(), *this);
+                }
+                else if (m_types[typeId]->hasMethod(nameStr.value()))
+                {
+                    runFunction(m_types[typeId]->getMethod(nameStr.value()));
+                }
+                else
+                {
+                    throw Errors::RuntimeError("No method with name '" + nameStr.value() + "' in type '" + getTypeNameById(typeId).value() + "'");
+                }
+            }
+            else
+            {
+                throw Errors::RuntimeError("Invalid string constant id");
+            }
+        }
+        break;
+        // Call function of a scene
+        case Instructions::CallFunction:
+        {
+            size_t id = parseOperationConstant<size_t>(func.bytes.begin() + (pos + 1), func.bytes.end());
+            pos += sizeof(size_t);
+            if (std::optional<std::string> nameStr = getConstantStringById(id); nameStr.has_value())
+            {
+                runFunctionByName(nameStr.value());
+            }
+            else
+            {
+                throw Errors::RuntimeError("Invalid string constant id");
+            }
+        }
+        break;
+        // Exit function without returning a value
+        case Instructions::ExitFunction:
+        {
+            break;
+        }
+        break;
+        // Return value from a function and  exit
+        case Instructions::Return:
+        {
+            // TODO: add returning
+            break;
+        }
         default:
             throw Errors::InvalidInstructionError(std::string("Unknown instruction with value ") + std::to_string(func.bytes.at(pos)), pos);
         }
         pos++;
     }
+    // TODO: do garbage collection here
+    popVariableBlock();
 }
