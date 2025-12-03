@@ -4,6 +4,7 @@
 #include <string>
 #include <map>
 #include <cstdint>
+#include "../Code/DebugInfo.hpp"
 
 namespace Engine::Runnable
 {
@@ -21,6 +22,11 @@ namespace Engine::Runnable
     {
         size_t argumentCount;
         std::vector<uint8_t> bytes;
+    };
+
+    struct RunnableFunctionDebugInfo
+    {
+        
     };
 
     class TypeInfo
@@ -50,6 +56,7 @@ namespace Engine::Runnable
 
     struct RunnableCode
     {
+        Code::Debug::DebugInfo debugInfo;
         std::map<std::string, RunnableFunction> functions;
         std::vector<TypeInfo> types;
         std::vector<std::string> strings;

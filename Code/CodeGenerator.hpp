@@ -7,6 +7,7 @@
 
 namespace Code::Fusion
 {
+
     class FusionCodeGenerator
     {
     public:
@@ -39,13 +40,16 @@ namespace Code::Fusion
 
         void parseTypeDeclaration();
 
-        std::pair<std::string, Engine::Runnable::RunnableFunction> parseFunctionDeclaration();
+        /// @brief Parse function declaration and return name and byte info info
+        /// @param typeId Id of the type that the function belongs to. Used only for generating debug info. -1 if it belongs to "scene" type
+        /// @return Tuple containing function name and runnable info
+        std::pair<std::string, Engine::Runnable::RunnableFunction> parseFunctionDeclaration(size_t typeId = (size_t)-1);
 
-        void parseInstruction(FusionInstruction instruction);
+        void parseInstruction(FusionInstruction instruction, Debug::FunctionDebugInfo &debugInfo);
 
         /// @brief Convert instruction argument into bytes that can be written to the bytecode storage
-        /// @param token 
-        /// @return 
+        /// @param token
+        /// @return
         std::vector<uint8_t> createInstructionConstValueBytes(Token const *token);
 
         void consumeKeyword(Keyword keyword, std::string const &errorMessage);
@@ -55,8 +59,8 @@ namespace Code::Fusion
         void consumeIdSeparator(std::string const &id, std::string const &errorMessage);
 
         /// @brief Generate storable constant of a type that can be stored on stack for usage during object initialisation
-        /// @param errorMessage 
-        /// @return 
+        /// @param errorMessage
+        /// @return
         Engine::Runnable::CodeConstantValue parseConstant(std::string const &errorMessage);
 
         /// @brief Try to consume separator and if the current value is not separator of needed value, do nothing. useful for skipping line breaks
@@ -70,7 +74,7 @@ namespace Code::Fusion
 
         void consumeEndOfStatement();
 
-        void consumeEndOfStatementOrError(std::string const& err);
+        void consumeEndOfStatementOrError(std::string const &err);
 
     private:
         void error(std::string const &errorMessage);

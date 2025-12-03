@@ -26,7 +26,7 @@ namespace Engine
         explicit Scene(Runnable::RunnableCode const &code);
 
         /// @brief Update all objects present in the scene and run their user defined update functions
-        /// @param delta 
+        /// @param delta
         void update(float delta);
 
         void draw(sf::RenderWindow &window)
@@ -43,7 +43,7 @@ namespace Engine
 
         /// @brief Run function from provided bytecode data
         /// @param func Function data
-        void runFunction(Runnable::RunnableFunction const& func);
+        void runFunction(Runnable::RunnableFunction const &func);
 
         void addType(std::string const &name, std::unique_ptr<ObjectType> type)
         {
@@ -87,10 +87,10 @@ namespace Engine
         /// @brief Set value of the variable in the current block
         /// @param id Id of the variable(block will be resized to fit)
         /// @param val Value to assign
-        void setVariableValue(size_t id, Value const& val);
+        void setVariableValue(size_t id, Value const &val);
 
         /// @brief Get value of variable with given id in current block
-        /// @param id Id of the variable 
+        /// @param id Id of the variable
         /// @return Value or None if no block or variable is present
         std::optional<Value> getVariableValue(size_t id) const;
 
@@ -100,10 +100,9 @@ namespace Engine
 
         /// @brief Push value onto the currect stack, or throw error if no stack exists
         /// @param v Value to push
-        void pushToStack(Value const& v);
+        void pushToStack(Value const &v);
 
     private:
-
         std::vector<std::vector<Value>> m_operationStack = {{}};
         std::vector<std::vector<Value>> m_variables;
         std::vector<std::string> m_strings;
@@ -114,5 +113,7 @@ namespace Engine
         std::vector<std::unique_ptr<GameObject>> m_objects;
         /// @brief List of all memory tracked objects such as strings and arrays
         std::vector<std::unique_ptr<MemoryObject>> m_memory;
+
+        Code::Debug::DebugInfo m_debugInfo;
     };
 }

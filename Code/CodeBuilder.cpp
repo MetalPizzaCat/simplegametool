@@ -35,9 +35,11 @@ size_t Code::CodeBuilder::getOrAddStringId(std::string const &str)
 Engine::Runnable::RunnableCode Code::CodeBuilder::getRunnableCode() const
 {
     return Engine::Runnable::RunnableCode{
+        .debugInfo = Debug::DebugInfo(m_functionDebugInfo),
         .functions = m_functions,
         .types = m_types,
-        .strings = m_strings};
+        .strings = m_strings,
+    };
 }
 
 void Code::CodeBuilder::createBlock()
@@ -53,6 +55,21 @@ void Code::CodeBuilder::popBlock()
 void Code::CodeBuilder::addFunction(std::string const &name, Engine::Runnable::RunnableFunction func)
 {
     m_functions[name] = func;
+}
+
+Code::Debug::FunctionDebugInfo &Code::CodeBuilder::getOrCreateDebugEntryForFunction(size_t typeId, std::string const &functionName)
+{
+    std::vector<Debug::FunctionDebugInfo>::iterator it = std::find_if(
+        m_functionDebugInfo.begin(),
+        m_functionDebugInfo.end(),
+        [typeId, functionName](Debug::FunctionDebugInfo const &fd)
+        { return fd.getTypeId() == typeId && fd.getName() == functionName; });
+    if (it == m_functionDebugInfo.end())
+    {
+        m_functionDebugInfo.push_back(Debug::FunctionDebugInfo(typeId, functionName, ""));
+        return m_functionDebugInfo.back();
+    }
+    return *it;
 }
 
 void Code::CodeBlock::insert(std::vector<uint8_t> const &bytes)

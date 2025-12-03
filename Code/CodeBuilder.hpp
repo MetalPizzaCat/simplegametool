@@ -4,6 +4,7 @@
 #include <map>
 #include <optional>
 #include <unordered_map>
+#include "DebugInfo.hpp"
 #include "../Engine/Runnable.hpp"
 
 namespace Code
@@ -88,10 +89,14 @@ namespace Code
 
         void addFunction(std::string const &name, Engine::Runnable::RunnableFunction func);
 
+        Debug::FunctionDebugInfo & getOrCreateDebugEntryForFunction(size_t typeId, std::string const& functionName);
+
     private:
         std::vector<CodeBlock> m_blocks;
         std::vector<std::string> m_strings;
         std::vector<Engine::Runnable::TypeInfo> m_types;
         std::map<std::string, Engine::Runnable::RunnableFunction> m_functions;
+        std::vector<Debug::FunctionDebugInfo> m_functionDebugInfo;
+        
     };
 }

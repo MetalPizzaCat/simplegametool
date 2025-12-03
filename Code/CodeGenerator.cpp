@@ -6,7 +6,6 @@ void Code::Fusion::FusionCodeGenerator::generate()
     consumeEndOfStatement();
     while (isKeyword(Keyword::Type) || isKeyword(Keyword::Function))
     {
-
         if (isKeyword(Keyword::Type))
         {
             parseTypeDeclaration();
@@ -82,11 +81,12 @@ void Code::Fusion::FusionCodeGenerator::parseTypeDeclaration()
     m_builder.addType(TypeInfo(name->getId(), spriteName->getAssetName(), fields, methods));
 }
 
-std::pair<std::string, Engine::Runnable::RunnableFunction> Code::Fusion::FusionCodeGenerator::parseFunctionDeclaration()
+std::pair<std::string, Engine::Runnable::RunnableFunction> Code::Fusion::FusionCodeGenerator::parseFunctionDeclaration(size_t typeId)
 {
     using namespace Engine::Runnable;
     consumeKeyword(Keyword::Function, "Expected 'func'");
     IdToken const *name = getTokenOrError<IdToken>("expected function name");
+    Debug::FunctionDebugInfo &debugInfo = m_builder.getOrCreateDebugEntryForFunction(typeId, name->getId());
     advance();
     consumeSeparator(Separator::BlockOpen, "expected '{'");
     consumeEndOfStatement();
@@ -158,6 +158,7 @@ std::pair<std::string, Engine::Runnable::RunnableFunction> Code::Fusion::FusionC
             }
             advance();
             m_builder.getCurrentBlock().insert(bytes);
+            debugInfo.addByteRangeFromPrevious(bytes.size(), token->getRow(), token->getColumn());
             consumeEndOfStatementOrError("Expected new line or ';'");
         }
         // jump is handled entirely differently because it works using relative offsets
@@ -177,10 +178,11 @@ std::pair<std::string, Engine::Runnable::RunnableFunction> Code::Fusion::FusionC
             m_builder.getCurrentBlock().addLabelDestination(dest->getId(), m_builder.getCurrentBlock().getBytes().size(), dest->getColumn(), dest->getRow());
 
             m_builder.getCurrentBlock().reserveBytesForJump();
+            debugInfo.addByteRangeFromPrevious(1 + sizeof(Engine::JumpDistanceType), token->getRow(), token->getColumn());
         }
         else
         {
-            parseInstruction(token->getInstruction());
+            parseInstruction(token->getInstruction(), debugInfo);
         }
     }
 
@@ -191,7 +193,7 @@ std::pair<std::string, Engine::Runnable::RunnableFunction> Code::Fusion::FusionC
     return std::make_pair(name->getId(), Engine::Runnable::RunnableFunction{.argumentCount = 0, .bytes = std::move(temp)});
 }
 
-void Code::Fusion::FusionCodeGenerator::parseInstruction(FusionInstruction instruction)
+void Code::Fusion::FusionCodeGenerator::parseInstruction(FusionInstruction instruction, Debug::FunctionDebugInfo &debugInfo)
 {
     if (!FusionInstructionsData.contains(instruction))
     {
@@ -202,6 +204,8 @@ void Code::Fusion::FusionCodeGenerator::parseInstruction(FusionInstruction instr
     std::vector<uint8_t> bytes = {(uint8_t)data->instruction};
 
     Token const *token = getCurrent();
+    size_t row = token->getRow();
+    size_t column = token->getColumn();
     for (size_t argCount = 0; !isSeparator(Separator::EndOfStatement) && (token = getCurrent()) != nullptr; argCount++)
     {
         if (argCount >= data->argumentTypes.size())
@@ -281,6 +285,7 @@ void Code::Fusion::FusionCodeGenerator::parseInstruction(FusionInstruction instr
         optionallyConsumeSeparator(Separator::Comma);
     }
     consumeEndOfStatementOrError("expected new line or ';'");
+    debugInfo.addByteRangeFromPrevious(bytes.size(), row, column);
     m_builder.getCurrentBlock().insert(bytes);
 }
 

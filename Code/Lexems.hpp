@@ -90,7 +90,6 @@ namespace Code
         {"less_eq", FusionInstruction::LessOrEquals},
         {"call", FusionInstruction::Call},
         {"call_method", FusionInstruction::CallMethod},
-        {"call_method_static", FusionInstruction::CallMethod},
         {"ret", FusionInstruction::Return},
         {"end", FusionInstruction::End}};
 

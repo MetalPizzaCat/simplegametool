@@ -28,6 +28,8 @@ add_executable(simplegametool main.cpp
     Code/Lexems.hpp
     Code/Error.hpp
     Code/Error.cpp
+    Code/DebugInfo.hpp
+    Code/DebugInfo.cpp
     Engine/Runnable.hpp
     Engine/Runnable.cpp
     Engine/Asset.hpp

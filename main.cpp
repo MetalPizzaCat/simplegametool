@@ -122,30 +122,14 @@ func update{
     )CODE";
 
     std::string code = R"CODE(
-type Thing{
-    sprite = @img1
-    what = 0
-    func hi{
-        push "static hi!"
-        print
-    }
-}
-
-func init{ 
+func init{
+    jump %l1
     push 4.0
-    call_method_static std::sqrt
-    print 
-    call custom
-}
-
-func custom{
-    call_method_static Thing::hi
-    push "custom"
+    call_method std::sqt
     print
-}
-
-func update{
     %l1:
+    push "phsyce!"
+    print 
 }
     )CODE";
 
@@ -197,6 +181,6 @@ func update{
     }
     catch (Engine::Errors::RuntimeError e)
     {
-        displayError(0, 0, code, e.what());
+        displayError(e.getColumn(), e.getLine(), code, e.what());
     }
 }
