@@ -26,7 +26,8 @@ namespace Engine::Runnable
 
     struct RunnableFunctionDebugInfo
     {
-        
+        size_t typeId;
+        std::string functionName;
     };
 
     class TypeInfo

@@ -29,18 +29,18 @@ namespace Engine::Errors
         std::string m_message;
     };
 
-    class ByteCodeRuntimeError : public std::exception
-    {
-    public:
-        const char *what() const throw() override;
-        ByteCodeRuntimeError(size_t bytePosition, std::string const &msg);
+    // class ByteCodeRuntimeError : public std::exception
+    // {
+    // public:
+    //     const char *what() const throw() override;
+    //     ByteCodeRuntimeError(size_t bytePosition, std::string const &msg);
 
-        size_t getPosition() const { return m_pos; }
+    //     size_t getPosition() const { return m_pos; }
 
-    private:
-        std::string m_message;
-        size_t m_pos;
-    };
+    // private:
+    //     std::string m_message;
+    //     size_t m_pos;
+    // };
 
     class RuntimeError : public std::exception
     {

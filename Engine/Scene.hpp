@@ -43,7 +43,8 @@ namespace Engine
 
         /// @brief Run function from provided bytecode data
         /// @param func Function data
-        void runFunction(Runnable::RunnableFunction const &func);
+        /// @param debugInfo Optional information that is used for figuring out code location in case of an error
+        void runFunction(Runnable::RunnableFunction const &func, std::optional<Runnable::RunnableFunctionDebugInfo> const &debugInfo);
 
         void addType(std::string const &name, std::unique_ptr<ObjectType> type)
         {
@@ -101,6 +102,14 @@ namespace Engine
         /// @brief Push value onto the currect stack, or throw error if no stack exists
         /// @param v Value to push
         void pushToStack(Value const &v);
+
+        std::optional<size_t> getIdForType(ObjectType const* type) const;
+
+        /// @brief Throw an error with given info. Either throws an error with debug information or simple error depending on the availability of debug info
+        /// @param location Location in the type list. Type id and function name are used to retrieve correct debug data
+        /// @param position Position in th byte code of function that is running
+        /// @param message Message to display in the exception
+        void error(std::optional<Runnable::RunnableFunctionDebugInfo> const &location, size_t position, std::string const &message);
 
     private:
         std::vector<std::vector<Value>> m_operationStack = {{}};

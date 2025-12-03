@@ -9,14 +9,14 @@ Engine::Errors::RuntimeError::RuntimeError(size_t row, size_t column, std::strin
 {
 }
 
-const char *Engine::Errors::ByteCodeRuntimeError::what() const throw()
-{
-    return m_message.c_str();
-}
+// const char *Engine::Errors::ByteCodeRuntimeError::what() const throw()
+// {
+//     return m_message.c_str();
+// }
 
-Engine::Errors::ByteCodeRuntimeError::ByteCodeRuntimeError(size_t bytePosition, std::string const &msg) : m_pos(bytePosition), m_message(msg)
-{
-}
+// Engine::Errors::ByteCodeRuntimeError::ByteCodeRuntimeError(size_t bytePosition, std::string const &msg) : m_pos(bytePosition), m_message(msg)
+// {
+// }
 
 const char *Engine::Errors::InvalidInstructionError::what() const throw()
 {

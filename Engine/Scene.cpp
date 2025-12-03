@@ -28,7 +28,14 @@ void Engine::Scene::update(float delta)
         obj->update(delta);
         if (m_objects.back()->getType()->hasMethod("update"))
         {
-            runFunction(m_objects.back()->getType()->getMethod("update"));
+            if (std::optional<size_t> typeId = getIdForType(obj->getType()); typeId.has_value())
+            {
+                runFunction(m_objects.back()->getType()->getMethod("update"), Runnable::RunnableFunctionDebugInfo{.typeId = typeId.value(), .functionName = "update"});
+            }
+            else
+            {
+                runFunction(m_objects.back()->getType()->getMethod("update"), {});
+            }
         }
     }
     if (hasFunction("update"))
@@ -114,37 +121,55 @@ void Engine::Scene::pushToStack(Value const &v)
     m_operationStack.back().push_back(v);
 }
 
-void Engine::Scene::runFunctionByName(std::string const &name)
+std::optional<size_t> Engine::Scene::getIdForType(ObjectType const *type) const
 {
-    try
+    if (std::vector<std::unique_ptr<ObjectType>>::const_iterator it = std::find_if(m_types.begin(), m_types.end(), [type](std::unique_ptr<ObjectType> const &t)
+                                                                                   { return t.get() == type; });
+        it != m_types.end())
     {
-        Runnable::RunnableFunction const &func = m_functions.at(name);
-        runFunction(func);
+        return it - m_types.begin();
     }
-    catch (Errors::ByteCodeRuntimeError e)
+    return {};
+}
+
+void Engine::Scene::error(std::optional<Runnable::RunnableFunctionDebugInfo> const &location, size_t position, std::string const &message)
+{
+    if (!location.has_value())
     {
-        if (std::optional<std::pair<size_t, size_t>> filePos = m_debugInfo.getFilePositionForByte((size_t)(-1), name, e.getPosition()))
-        {
-            throw Errors::RuntimeError(filePos.value().first, filePos.value().second, e.what());
-        }
-        else
-        {
-            throw Errors::ExecutionError(e.what());
-        }
+        // if we don't have debug info just throw error without location info
+        throw Errors::ExecutionError(message);
+    }
+    if (std::optional<std::pair<size_t, size_t>> filePos = m_debugInfo.getFilePositionForByte(location.value().typeId, location.value().functionName, position))
+    {
+        throw Errors::RuntimeError(filePos.value().first, filePos.value().second, message);
+    }
+    else
+    {
+        throw Errors::ExecutionError(message);
     }
 }
 
-void Engine::Scene::runFunction(Runnable::RunnableFunction const &func)
+void Engine::Scene::runFunctionByName(std::string const &name)
+{
+
+    Runnable::RunnableFunction const &func = m_functions.at(name);
+    runFunction(func, Runnable::RunnableFunctionDebugInfo((size_t)-1, name));
+}
+
+void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::optional<Runnable::RunnableFunctionDebugInfo> const &debugInfo)
 {
     size_t pos = 0;
     createVariableBlock();
     for (size_t i = 0; i < func.argumentCount; i++)
     {
+        // approach copied from goblang because it worked
+        // does mean that these could be overriden during execution
+        // but i am fine with it because c lets you do it and it works fine
         setVariableValue(i, popFromStackOrError());
     }
-    m_operationStack.push_back({});
     try
     {
+        m_operationStack.push_back({});
         while (pos < func.bytes.size())
         {
 
@@ -152,8 +177,6 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func)
             // but before you raise an concern think about it
             // this switch case *is* the interpreter and simply having a switch case(which is most likely going to converted into a jump table during compilation)
             // *is* a more efficient way to handle executing instructions
-            //
-            // you can complain however about error handling but that's a sacrifice that has to be done to make error messages more descriptive
             switch ((Instructions)func.bytes.at(pos))
             {
             case Instructions::None:
@@ -168,7 +191,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func)
                 }
                 else
                 {
-                    throw Engine::Errors::ByteCodeRuntimeError(pos, std::string("Unable to find string at id " + std::to_string(typeId)));
+                    error(debugInfo, pos, std::string("Unable to find string at id " + std::to_string(typeId)));
                 }
             }
             break;
@@ -179,7 +202,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func)
                 m_objects.push_back(std::make_unique<GameObject>(m_types[typeId].get(), *this));
                 if (m_objects.back()->getType()->hasMethod("init"))
                 {
-                    runFunction(m_objects.back()->getType()->getMethod("init"));
+                    runFunction(m_objects.back()->getType()->getMethod("init"), Runnable::RunnableFunctionDebugInfo(typeId, "init"));
                 }
 
                 pushToStack(m_objects.back().get());
@@ -216,7 +239,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func)
                 }
                 else
                 {
-                    throw Errors::ByteCodeRuntimeError(pos, "No variable with id '" + std::to_string(id) + "'is present in current context");
+                    error(debugInfo, pos, "No variable with id '" + std::to_string(id) + "'is present in current context");
                 }
             }
             break;
@@ -228,7 +251,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func)
                 m_operationStack.back().pop_back();
                 if (a.index() != b.index())
                 {
-                    throw Errors::ByteCodeRuntimeError(pos, "Attempted to perform arithmetic on incompatible types");
+                    error(debugInfo, pos, "Attempted to perform arithmetic on incompatible types");
                 }
                 if (a.index() == ValueType::Vector)
                 {
@@ -303,7 +326,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func)
                 Value a = popFromStackOrError();
                 if (a.index() != ValueType::Bool)
                 {
-                    throw Errors::ByteCodeRuntimeError(pos, "Expected boolean value on stack for condition");
+                    error(debugInfo, pos, "Expected boolean value on stack for condition");
                 }
                 if (std::get<bool>(a))
                 {
@@ -328,7 +351,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func)
                 Value a = popFromStackOrError();
                 if (a.index() != b.index())
                 {
-                    throw Errors::ByteCodeRuntimeError(pos, "Attempted to perform comparison on two different types");
+                    error(debugInfo, pos, "Attempted to perform comparison on two different types");
                 }
                 if (a.index() == ValueType::Int)
                 {
@@ -336,7 +359,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func)
                 }
                 else
                 {
-                    throw Errors::ByteCodeRuntimeError(pos, "Attempted to perform comparison on incompatible types");
+                    error(debugInfo, pos, "Attempted to perform comparison on incompatible types");
                 }
             }
             break;
@@ -352,56 +375,29 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func)
                 pos += sizeof(size_t);
                 if (typeId >= m_types.size())
                 {
-                    throw Errors::ByteCodeRuntimeError(pos, "Invalid typeid. No type with id '" + std::to_string(typeId) + "' present");
+                    error(debugInfo, pos, "Invalid typeid. No type with id '" + std::to_string(typeId) + "' present");
                 }
                 if (std::optional<std::string> nameStr = getConstantStringById(id); nameStr.has_value())
                 {
                     // yes the way errors are handled is awkward and tbh rather strange but this was the easier way to handle converting byte code to position
                     if (m_types[typeId]->isNativeMethod(nameStr.value()))
                     {
-                        try
-                        {
-                            m_types[typeId]->callNativeMethod(nameStr.value(), *this);
-                        }
-                        catch (Errors::ByteCodeRuntimeError e)
-                        {
-                            if (std::optional<std::pair<size_t, size_t>> filePos = m_debugInfo.getFilePositionForByte(typeId, nameStr.value(), e.getPosition()))
-                            {
-                                throw Errors::RuntimeError(filePos.value().first, filePos.value().second, e.what());
-                            }
-                            else
-                            {
-                                throw Errors::ExecutionError(e.what());
-                            }
-                        }
+                        m_types[typeId]->callNativeMethod(nameStr.value(), *this);
                     }
                     else if (m_types[typeId]->hasMethod(nameStr.value()))
                     {
-                        try
-                        {
-                            runFunction(m_types[typeId]->getMethod(nameStr.value()));
-                        }
-                        catch (Errors::ByteCodeRuntimeError e)
-                        {
-                            if (std::optional<std::pair<size_t, size_t>> filePos = m_debugInfo.getFilePositionForByte(typeId, nameStr.value(), e.getPosition()))
-                            {
-                                throw Errors::RuntimeError(filePos.value().first, filePos.value().second, e.what());
-                            }
-                            else
-                            {
-                                throw Errors::ExecutionError(e.what());
-                            }
-                        }
+                        runFunction(m_types[typeId]->getMethod(nameStr.value()), Runnable::RunnableFunctionDebugInfo(typeId, nameStr.value()));
                     }
 
                     else
                     {
-                        throw Errors::ByteCodeRuntimeError(pos, "No method with name '" + nameStr.value() + "' in type '" + getTypeNameById(typeId).value() + "'");
+
+                        error(debugInfo, pos, "No method with name '" + nameStr.value() + "' in type '" + getTypeNameById(typeId).value() + "'");
                     }
                 }
                 else
                 {
-                    throw Errors::ByteCodeRuntimeError(pos, "Invalid string constant id");
+                    error(debugInfo, pos, "Invalid string constant id");
                 }
             }
             break;
@@ -416,7 +412,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func)
                 }
                 else
                 {
-                    throw Errors::ByteCodeRuntimeError(pos, "Invalid string constant id");
+                    error(debugInfo, pos, "Invalid string constant id");
                 }
             }
             break;
@@ -435,13 +431,16 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func)
             default:
                 throw Errors::InvalidInstructionError(std::string("Unknown instruction with value ") + std::to_string(func.bytes.at(pos)), pos);
             }
-        }
 
-        pos++;
+            pos++;
+        }
     }
+    // a bit awkward to catch exception just to throw it again
+    // but this way we can avoid passing function data *everywhere*
+    // and we can keep those functions free to use in non runnable code
     catch (Errors::RuntimeMemoryError e)
     {
-        throw Errors::ByteCodeRuntimeError(pos, e.what());
+        error(debugInfo, pos, e.what());
     }
     // TODO: do garbage collection here
     popVariableBlock();

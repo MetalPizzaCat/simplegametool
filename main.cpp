@@ -123,12 +123,13 @@ func update{
 
     std::string code = R"CODE(
 func init{
+    push "4.0"
+    call_method std::sqrt
     jump %l1
-    push 4.0
-    call_method std::sqt
+    
     print
     %l1:
-    push "phsyce!"
+    push "psyche!"
     print 
 }
     )CODE";
