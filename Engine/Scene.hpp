@@ -10,6 +10,7 @@
 #include "Instructions.hpp"
 #include "../Code/CodeBuilder.hpp"
 #include "MemoryObject.hpp"
+#include "Error.hpp"
 
 namespace Engine
 {
@@ -85,6 +86,27 @@ namespace Engine
         /// @brief Pop value from current stack frame or throw error if no stack frame exists or stack is empty
         Value popFromStackOrError();
 
+        /// @brief Attempt to get value from top of the current stack frame as given type. Throws error if no value is present or 
+        /// @tparam T 
+        /// @param errorMessage 
+        /// @return 
+        template <class T>
+        T popFromStackAsType(std::string const &errorMessage)
+        {
+            if(m_operationStack.empty())
+            {
+                  throw Errors::RuntimeMemoryError("Can not pop from stack because stack is empty");
+            }
+            if (!std::holds_alternative<T>(m_operationStack.back().back()))
+            {
+                throw Errors::RuntimeMemoryError(errorMessage);
+            }
+            Value v = m_operationStack.back().back();
+            m_operationStack.back().pop_back();
+            return std::get<T>(v);
+        }
+
+
         /// @brief Set value of the variable in the current block
         /// @param id Id of the variable(block will be resized to fit)
         /// @param val Value to assign
@@ -103,7 +125,7 @@ namespace Engine
         /// @param v Value to push
         void pushToStack(Value const &v);
 
-        std::optional<size_t> getIdForType(ObjectType const* type) const;
+        std::optional<size_t> getIdForType(ObjectType const *type) const;
 
         /// @brief Throw an error with given info. Either throws an error with debug information or simple error depending on the availability of debug info
         /// @param location Location in the type list. Type id and function name are used to retrieve correct debug data
@@ -111,13 +133,17 @@ namespace Engine
         /// @param message Message to display in the exception
         void error(std::optional<Runnable::RunnableFunctionDebugInfo> const &location, size_t position, std::string const &message);
 
+        GameObject *getObjectByName(std::string const &name) const;
+
+        void collectGarbage();
+
     private:
         std::vector<std::vector<Value>> m_operationStack = {{}};
         std::vector<std::vector<Value>> m_variables;
         std::vector<std::string> m_strings;
-        std::map<std::string, size_t> m_typeNames;
+        std::unordered_map<std::string, size_t> m_typeNames;
         std::vector<std::unique_ptr<ObjectType>> m_types;
-        std::map<std::string, Runnable::RunnableFunction> m_functions;
+        std::unordered_map<std::string, Runnable::RunnableFunction> m_functions;
         /// @brief Various game objects that have various game logic
         std::vector<std::unique_ptr<GameObject>> m_objects;
         /// @brief List of all memory tracked objects such as strings and arrays

@@ -313,12 +313,18 @@ std::unique_ptr<Code::IntToken> Code::Parser::parseInt()
 
 std::unique_ptr<Code::FloatToken> Code::Parser::parseFloat()
 {
-    if (std::optional<char> curr = getCurrent(); !curr.has_value() || !(std::isdigit(curr.value())) && (curr.value() != '-'))
+    if (std::optional<char> curr = getCurrent(); !curr.has_value() || !(std::isdigit(curr.value()) || (curr.value() == '-')))
     {
         return nullptr;
     }
     std::string num;
+
     size_t offset = 0;
+    if (getCurrent().value() == '-')
+    {
+        num = '-';
+        offset++;
+    }
     bool hasSeparator = false;
     for (; getFromCurrentWithOffset(offset).has_value() &&
            (std::isdigit(getFromCurrentWithOffset(offset).value()) || (getFromCurrentWithOffset(offset).value()) == '.');

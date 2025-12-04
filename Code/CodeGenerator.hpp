@@ -70,6 +70,8 @@ namespace Code::Fusion
 
         void advance() { m_it++; }
 
+        void backtrack();
+
         CodeBuilder const &getBuilder() const { return m_builder; }
 
         void consumeEndOfStatement();

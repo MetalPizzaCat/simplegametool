@@ -10,7 +10,7 @@ namespace Engine
     class GameObject
     {
     public:
-        explicit GameObject(ObjectType const *type, Scene &state);
+        explicit GameObject(ObjectType const *type, std::string const &name, Scene &state);
         void draw(sf::RenderWindow &window);
 
         void setPosition(sf::Vector2f pos);
@@ -21,6 +21,12 @@ namespace Engine
         std::string const &getName() const { return m_name; }
 
         ObjectType const *getType() const { return m_type; }
+
+        bool hasField(std::string const &name) const { return m_fields.contains(name); }
+
+        std::optional<Value> getFieldValue(std::string const &name) const;
+
+        void setFieldValue(std::string const &name, Value const &val);
         virtual ~GameObject() = default;
 
     private:
@@ -29,6 +35,6 @@ namespace Engine
         ObjectType const *m_type;
         sf::Vector2f m_position;
         bool m_visible;
-        std::map<std::string, Value> m_fields;
+        std::unordered_map<std::string, Value> m_fields;
     };
 }

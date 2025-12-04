@@ -47,6 +47,7 @@ void Code::Fusion::FusionCodeGenerator::parseTypeDeclaration()
     using namespace Engine::Runnable;
     consumeKeyword(Keyword::Type, "Expected 'type'");
     IdToken const *name = getTokenOrError<IdToken>("expected type name");
+    m_builder.addTypeDeclarationLocation(name->getId(), Debug::DebugInfoSourceData{.row = name->getRow(), .column = name->getColumn()});
     advance();
     consumeSeparator(Separator::BlockOpen, "expected '{'");
     optionallyConsumeSeparator(Separator::EndOfStatement);
@@ -55,7 +56,7 @@ void Code::Fusion::FusionCodeGenerator::parseTypeDeclaration()
     AssetRefToken const *spriteName = getTokenOrError<AssetRefToken>("Expected sprite name");
     advance();
     consumeEndOfStatement();
-    std::map<std::string, CodeConstantValue> fields;
+    std::unordered_map<std::string, CodeConstantValue> fields;
     IdToken const *fieldTok = nullptr;
     while ((fieldTok = dynamic_cast<IdToken const *>(getCurrent())) != nullptr)
     {
@@ -67,7 +68,7 @@ void Code::Fusion::FusionCodeGenerator::parseTypeDeclaration()
 
         consumeEndOfStatement();
     }
-    std::map<std::string, RunnableFunction> methods;
+    std::unordered_map<std::string, RunnableFunction> methods;
     // parse methods
     while (isKeyword(Keyword::Function))
     {
@@ -153,6 +154,7 @@ std::pair<std::string, Engine::Runnable::RunnableFunction> Code::Fusion::FusionC
                 bytes.insert(bytes.end(), temp.begin(), temp.end());
                 temp = parseToBytes((double)vec.y);
                 bytes.insert(bytes.end(), temp.begin(), temp.end());
+                backtrack();
             }
             break;
             }
@@ -432,6 +434,14 @@ void Code::Fusion::FusionCodeGenerator::optionallyConsumeSeparator(Separator sep
     if (isSeparator(separator))
     {
         advance();
+    }
+}
+
+void Code::Fusion::FusionCodeGenerator::backtrack()
+{
+    if (m_it != m_tokens.begin())
+    {
+        m_it--;
     }
 }
 

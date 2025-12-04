@@ -1,7 +1,7 @@
 #include "GameObject.hpp"
 #include "Scene.hpp"
-Engine::GameObject::GameObject(ObjectType const *type, Scene &state)
-    : m_sprite(std::move(ContentManager::getInstance().loadSprite(type->getSpriteData()))), m_type(type), m_visible(true)
+Engine::GameObject::GameObject(ObjectType const *type, std::string const &name, Scene &state)
+    : m_sprite(std::move(ContentManager::getInstance().loadSprite(type->getSpriteData()))), m_type(type), m_name(name), m_visible(true)
 {
     for (std::pair<std::string, Runnable::CodeConstantValue> const &val : type->getFields())
     {
@@ -37,20 +37,40 @@ void Engine::GameObject::draw(sf::RenderWindow &window)
 {
     if (m_visible)
     {
-        m_sprite->draw(window);
+        if (m_sprite != nullptr)
+        {
+            m_sprite->draw(window);
+        }
     }
 }
 
 void Engine::GameObject::setPosition(sf::Vector2f pos)
 {
     m_position = pos;
-    m_sprite->setPosition(pos);
+    if (m_sprite != nullptr)
+    {
+        m_sprite->setPosition(pos);
+    }
 }
 
 void Engine::GameObject::update(float delta)
 {
-    if(m_sprite != nullptr)
+    if (m_sprite != nullptr)
     {
         m_sprite->update(delta);
     }
+}
+
+std::optional<Engine::Value> Engine::GameObject::getFieldValue(std::string const &name) const
+{
+    if (m_fields.contains(name))
+    {
+        return m_fields.at(name);
+    }
+    return {};
+}
+
+void Engine::GameObject::setFieldValue(std::string const &name, Value const &val)
+{
+    m_fields[name] = val;
 }

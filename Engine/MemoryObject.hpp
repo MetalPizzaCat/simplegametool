@@ -8,7 +8,7 @@ namespace Engine
     public:
         explicit MemoryObject() = default;
         void increaseRefCounter();
-        bool isDead() const { return m_dead; }
+        bool isDead() const { return m_dead || m_refCount == 0; }
         virtual ~MemoryObject() {}
 
     private:

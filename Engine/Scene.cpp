@@ -8,16 +8,31 @@ Engine::Scene::Scene(Runnable::RunnableCode const &code) : m_strings(code.string
     // should always exist as type 0, for sake of simplicity
     addType("std", std::make_unique<ObjectType>(nullptr,
                                                 nullptr,
-                                                std::map<std::string, Runnable::CodeConstantValue>(),
-                                                std::map<std::string, Runnable::RunnableFunction>(),
-                                                std::map<std::string, std::function<void(Scene & scene)>>{{"sqrt", Standard::sqrt}}));
+                                                std::unordered_map<std::string, Runnable::CodeConstantValue>(),
+                                                std::unordered_map<std::string, Runnable::RunnableFunction>(),
+                                                std::unordered_map<std::string, std::function<void(Scene & scene)>>{{"sqrt", Standard::sqrt}}));
     for (Runnable::TypeInfo const &type : code.types)
     {
         if (type.getName() == "std")
         {
             continue;
         }
-        addType(type.getName(), std::make_unique<ObjectType>(ContentManager::getInstance().getAsset(type.getSpriteName()), type.getFields(), type.getMethods()));
+        SpriteFramesAsset const *asset = ContentManager::getInstance().getAsset(type.getSpriteName());
+        if (asset == nullptr)
+        {
+            if (code.typeDeclarationLocations.contains(type.getName()))
+            {
+                throw Errors::RuntimeError(
+                    code.typeDeclarationLocations.at(type.getName()).row,
+                    code.typeDeclarationLocations.at(type.getName()).column,
+                    "Type '" + type.getName() + "' uses nonexistant asset '" + type.getSpriteName() + "'");
+            }
+            else
+            {
+                throw Errors::ExecutionError("Type '" + type.getName() + "' uses nonexistant asset '" + type.getSpriteName() + "'");
+            }
+        }
+        addType(type.getName(), std::make_unique<ObjectType>(asset, type.getFields(), type.getMethods()));
     }
 }
 
@@ -61,8 +76,8 @@ std::optional<std::string> Engine::Scene::getConstantStringById(size_t id) const
 
 std::optional<std::string> Engine::Scene::getTypeNameById(size_t id) const
 {
-    std::map<std::string, size_t>::const_iterator it = std::find_if(m_typeNames.begin(), m_typeNames.end(), [id](auto const &t)
-                                                                    { return t.second == id; });
+    std::unordered_map<std::string, size_t>::const_iterator it = std::find_if(m_typeNames.begin(), m_typeNames.end(), [id](auto const &t)
+                                                                              { return t.second == id; });
 
     return it == m_typeNames.end() ? std::optional<std::string>{} : it->first;
 }
@@ -85,7 +100,7 @@ void Engine::Scene::setVariableValue(size_t id, Value const &val)
         throw Errors::RuntimeMemoryError("No variable block is present");
     }
     std::vector<Value> &frame = m_variables.back();
-    if (id > frame.size())
+    if (id >= frame.size())
     {
         frame.resize(id + 1);
     }
@@ -95,7 +110,7 @@ void Engine::Scene::setVariableValue(size_t id, Value const &val)
 
 std::optional<Engine::Value> Engine::Scene::getVariableValue(size_t id) const
 {
-    if (m_variables.empty() || id >= m_variables.size())
+    if (m_variables.empty() || id >= m_variables.back().size())
     {
         return {};
     }
@@ -149,6 +164,29 @@ void Engine::Scene::error(std::optional<Runnable::RunnableFunctionDebugInfo> con
     }
 }
 
+Engine::GameObject *Engine::Scene::getObjectByName(std::string const &name) const
+{
+    if (std::vector<std::unique_ptr<GameObject>>::const_iterator it = std::find_if(m_objects.begin(), m_objects.end(), [name](std::unique_ptr<GameObject> const &o)
+                                                                                   { return o->getName() == name; });
+        it != m_objects.end())
+    {
+        return it->get();
+    }
+
+    return nullptr;
+}
+
+void Engine::Scene::collectGarbage()
+{
+    for (int64_t i = m_memory.size() - 1; i >= 0; i--)
+    {
+        if (m_memory[i]->isDead())
+        {
+            m_memory.erase(m_memory.begin() + i);
+        }
+    }
+}
+
 void Engine::Scene::runFunctionByName(std::string const &name)
 {
 
@@ -197,15 +235,29 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
             break;
             case Instructions::CreateInstance:
             {
+                std::string const &name = popFromStackAsType<StringObject *>("Expected string for object name")->getString();
                 size_t typeId = parseOperationConstant<int64_t>(func.bytes.begin() + (pos + 1), func.bytes.end());
                 pos += sizeof(size_t);
-                m_objects.push_back(std::make_unique<GameObject>(m_types[typeId].get(), *this));
+                m_objects.push_back(std::make_unique<GameObject>(m_types[typeId].get(), name, *this));
                 if (m_objects.back()->getType()->hasMethod("init"))
                 {
                     runFunction(m_objects.back()->getType()->getMethod("init"), Runnable::RunnableFunctionDebugInfo(typeId, "init"));
                 }
 
                 pushToStack(m_objects.back().get());
+            }
+            break;
+            case Instructions::GetInstanceByName:
+            {
+                std::string const &name = popFromStackAsType<StringObject *>("Expected string for object name")->getString();
+                if (GameObject *obj = getObjectByName(name); obj != nullptr)
+                {
+                    pushToStack(obj);
+                }
+                else
+                {
+                    error(debugInfo, pos, "No object named '" + name + "' found");
+                }
             }
             break;
             case Instructions::PushInt:
@@ -216,6 +268,16 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 pushToStack(parseOperationConstant<double>(func.bytes.begin() + (pos + 1), func.bytes.end()));
                 pos += sizeof(double);
                 break;
+
+            case Instructions::PushVector:
+            {
+                double x = parseOperationConstant<double>(func.bytes.begin() + (pos + 1), func.bytes.end());
+                pos += sizeof(double);
+                double y = parseOperationConstant<double>(func.bytes.begin() + (pos + 1), func.bytes.end());
+                pos += sizeof(double);
+                pushToStack(sf::Vector2f(x, y));
+            }
+            break;
 
             case Instructions::SetLocal:
             {
@@ -245,13 +307,11 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
             break;
             case Instructions::Add:
             {
-                Value a = m_operationStack.back().back();
-                m_operationStack.back().pop_back();
-                Value b = m_operationStack.back().back();
-                m_operationStack.back().pop_back();
+                Value a = popFromStackOrError();
+                Value b = popFromStackOrError();
                 if (a.index() != b.index())
                 {
-                    error(debugInfo, pos, "Attempted to perform arithmetic on incompatible types");
+                    error(debugInfo, pos, std::string("Attempted to perform arithmetic on incompatible types: ") + typeToString((ValueType)a.index()) + " and " + typeToString((ValueType)b.index()));
                 }
                 if (a.index() == ValueType::Vector)
                 {
@@ -260,6 +320,10 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 else if (a.index() == ValueType::Int)
                 {
                     pushToStack(std::get<int64_t>(a) + std::get<int64_t>(b));
+                }
+                else if (a.index() == ValueType::Float)
+                {
+                    pushToStack(std::get<double>(a) + std::get<double>(b));
                 }
             }
             break;
@@ -276,43 +340,35 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 break;
             case Instructions::SetPosition:
             {
-                Value pos = m_operationStack.back().back();
-                m_operationStack.back().pop_back();
-                Value obj = m_operationStack.back().back();
-                m_operationStack.back().pop_back();
+                sf::Vector2f pos = popFromStackAsType<sf::Vector2f>("Expected vector for position on stack");
+                GameObject *obj = popFromStackAsType<GameObject *>("Expected object to assign position for on stack");
 
-                std::get<GameObject *>(obj)->setPosition(sf::Vector2f(std::get<sf::Vector2f>(pos)));
+                obj->setPosition(pos);
             }
             break;
             case Instructions::GetPosition:
             {
-                Value obj = m_operationStack.back().back();
-                m_operationStack.back().pop_back();
+                GameObject *obj = popFromStackAsType<GameObject *>("Expected object to get position from on stack");
 
-                pushToStack(std::get<GameObject *>(obj)->getPosition());
+                pushToStack(obj->getPosition());
             }
             break;
             case Instructions::MakeVector:
             {
-                if (m_operationStack.back().size() < 2)
-                {
-                    throw std::runtime_error("Stack doesn't have enough values for operation, expected 2");
-                }
-                Value a = m_operationStack.back().back();
-                m_operationStack.back().pop_back();
-                Value b = m_operationStack.back().back();
-                m_operationStack.back().pop_back();
-                pushToStack(sf::Vector2f(std::get<double>(a), std::get<double>(b)));
+                Value x = popFromStackAsType<double>("Expected float on stack for x");
+                Value y = popFromStackAsType<double>("Expected float on stack for y");
+                pushToStack(sf::Vector2f(std::get<double>(x), std::get<double>(y)));
             }
             break;
             case Instructions::GetVectorX:
+                pushToStack(popFromStackAsType<sf::Vector2f>("Expected vector for position on stack").x);
                 break;
             case Instructions::GetVectorY:
+                pushToStack(popFromStackAsType<sf::Vector2f>("Expected vector for position on stack").y);
                 break;
             case Instructions::Print:
             {
-                Value v = popFromStackOrError();
-                std::cout << valueToString(v) << std::endl;
+                std::cout << valueToString(popFromStackOrError()) << '\n';
             }
             break;
             case Instructions::JumpBy:
@@ -323,12 +379,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
             break;
             case Instructions::JumpByIf:
             {
-                Value a = popFromStackOrError();
-                if (a.index() != ValueType::Bool)
-                {
-                    error(debugInfo, pos, "Expected boolean value on stack for condition");
-                }
-                if (std::get<bool>(a))
+                if (popFromStackAsType<bool>("Expected boolean value on stack for condition"))
                 {
                     JumpDistanceType dist = parseOperationConstant<JumpDistanceType>(func.bytes.begin() + (pos + 1), func.bytes.end());
                     pos += dist;
@@ -344,7 +395,32 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
             case Instructions::NotEquals:
                 break;
             case Instructions::More:
-                break;
+            {
+                Value b = popFromStackOrError();
+                Value a = popFromStackOrError();
+                if (a.index() != b.index())
+                {
+                    error(debugInfo,
+                          pos,
+                          std::string("Attempted to perform comparison on two different types: ") +
+                              typeToString((ValueType)a.index()) +
+                              " and " +
+                              typeToString((ValueType)b.index()));
+                }
+                if (a.index() == ValueType::Int)
+                {
+                    pushToStack(std::get<int64_t>(a) > std::get<int64_t>(b));
+                }
+                if (a.index() == ValueType::Float)
+                {
+                    pushToStack(std::get<double>(a) > std::get<double>(b));
+                }
+                else
+                {
+                    error(debugInfo, pos, "Attempted to perform comparison on incompatible types");
+                }
+            }
+            break;
             case Instructions::Less:
             {
                 Value b = popFromStackOrError();
@@ -356,6 +432,10 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 if (a.index() == ValueType::Int)
                 {
                     pushToStack(std::get<int64_t>(a) < std::get<int64_t>(b));
+                }
+                if (a.index() == ValueType::Float)
+                {
+                    pushToStack(std::get<double>(a) < std::get<double>(b));
                 }
                 else
                 {
@@ -388,7 +468,6 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                     {
                         runFunction(m_types[typeId]->getMethod(nameStr.value()), Runnable::RunnableFunctionDebugInfo(typeId, nameStr.value()));
                     }
-
                     else
                     {
 
@@ -428,6 +507,34 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 // TODO: add returning
                 break;
             }
+            case Instructions::GetField:
+            {
+
+                std::string const &fieldName = popFromStackAsType<StringObject *>("Expected field name on stack")->getString();
+                GameObject *obj = popFromStackAsType<GameObject *>("Expected game object on stack");
+                if (std::optional<Value> val = obj->getFieldValue(fieldName); val.has_value())
+                {
+                    pushToStack(val.value());
+                }
+                else
+                {
+                    error(debugInfo, pos, "No field named '" + fieldName + "' in object '" + obj->getName() + "'");
+                }
+            }
+            break;
+            case Instructions::SetField:
+            {
+                std::string const &fieldName = popFromStackAsType<StringObject *>("Expected field name on stack")->getString();
+                Value v = popFromStackOrError();
+                popFromStackAsType<GameObject *>("Expected game object on stack")->setFieldValue(fieldName, v);
+            }
+            break;
+            case Instructions::HasField:
+            {
+                std::string const &fieldName = popFromStackAsType<StringObject *>("Expected field name on stack")->getString();
+                pushToStack(popFromStackAsType<GameObject *>("Expected game object on stack")->hasField(fieldName));
+            }
+            break;
             default:
                 throw Errors::InvalidInstructionError(std::string("Unknown instruction with value ") + std::to_string(func.bytes.at(pos)), pos);
             }
@@ -443,5 +550,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
         error(debugInfo, pos, e.what());
     }
     // TODO: do garbage collection here
+
+    collectGarbage();
     popVariableBlock();
 }

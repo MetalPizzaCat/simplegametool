@@ -50,14 +50,14 @@ namespace Code
         void addLabelPosition(std::string const &name, size_t pos);
 
         /// @brief Check if given label has already been added to the code
-        /// @param name Name of the label 
-        /// @return 
+        /// @param name Name of the label
+        /// @return
         bool labelExists(std::string const &name) const { return m_jumpLabelLocations.contains(name); }
 
         /// @brief Write correct jump info into the resevered address spaces
         void applyLabels();
 
-        void addLabelDestination(std::string const& labelname, size_t jumpAddressBytesPosition, size_t codeColumn, size_t codeRow);
+        void addLabelDestination(std::string const &labelname, size_t jumpAddressBytesPosition, size_t codeColumn, size_t codeRow);
 
     private:
         std::map<std::string, std::vector<CodeJumpInfo>> m_jumpLabelDestinations;
@@ -89,14 +89,17 @@ namespace Code
 
         void addFunction(std::string const &name, Engine::Runnable::RunnableFunction func);
 
-        Debug::FunctionDebugInfo & getOrCreateDebugEntryForFunction(size_t typeId, std::string const& functionName);
+        Debug::FunctionDebugInfo &getOrCreateDebugEntryForFunction(size_t typeId, std::string const &functionName);
+
+        void addTypeDeclarationLocation(std::string const& name, Debug::DebugInfoSourceData const& data);
 
     private:
         std::vector<CodeBlock> m_blocks;
         std::vector<std::string> m_strings;
         std::vector<Engine::Runnable::TypeInfo> m_types;
-        std::map<std::string, Engine::Runnable::RunnableFunction> m_functions;
+        std::unordered_map<std::string, Engine::Runnable::RunnableFunction> m_functions;
+        // section for data used for debug only
         std::vector<Debug::FunctionDebugInfo> m_functionDebugInfo;
-        
+        std::unordered_map<std::string, Debug::DebugInfoSourceData> m_typeDeclarationLocations;
     };
 }

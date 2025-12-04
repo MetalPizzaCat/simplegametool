@@ -35,31 +35,32 @@ namespace Engine::Runnable
     public:
         explicit TypeInfo(std::string const &name,
                           std::string const &spritePath,
-                          std::map<std::string, CodeConstantValue> const &fields,
-                          std::map<std::string, RunnableFunction> const &methods) : m_name(name),
+                          std::unordered_map<std::string, CodeConstantValue> const &fields,
+                          std::unordered_map<std::string, RunnableFunction> const &methods) : m_name(name),
                                                                                     m_spritePath(spritePath),
                                                                                     m_fields(fields),
                                                                                     m_methods(methods) {}
         std::string const &getName() const { return m_name; }
 
-        std::map<std::string, CodeConstantValue> const &getFields() const { return m_fields; }
+        std::unordered_map<std::string, CodeConstantValue> const &getFields() const { return m_fields; }
 
-        std::map<std::string, RunnableFunction> const &getMethods() const { return m_methods; }
+        std::unordered_map<std::string, RunnableFunction> const &getMethods() const { return m_methods; }
 
         std::string const &getSpriteName() const { return m_spritePath; }
 
     private:
         std::string m_name;
         std::string m_spritePath;
-        std::map<std::string, CodeConstantValue> m_fields;
-        std::map<std::string, RunnableFunction> m_methods;
+        std::unordered_map<std::string, CodeConstantValue> m_fields;
+        std::unordered_map<std::string, RunnableFunction> m_methods;
     };
 
     struct RunnableCode
     {
         Code::Debug::DebugInfo debugInfo;
-        std::map<std::string, RunnableFunction> functions;
+        std::unordered_map<std::string, RunnableFunction> functions;
         std::vector<TypeInfo> types;
         std::vector<std::string> strings;
+        std::unordered_map<std::string, Code::Debug::DebugInfoSourceData> typeDeclarationLocations;
     };
 } // namespace Engine

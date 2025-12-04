@@ -15,6 +15,12 @@ namespace Code::Debug
         size_t column;
     };
 
+    struct DebugInfoSourceData
+    {
+        size_t row;
+        size_t column;
+    };
+
     class FunctionDebugInfo
     {
     public:
@@ -57,5 +63,6 @@ namespace Code::Debug
 
     private:
         std::vector<FunctionDebugInfo> m_info;
+        std::map<std::string, DebugInfoSourceData> m_typeDeclarationLocations;
     };
 } // namespace Code::Debug

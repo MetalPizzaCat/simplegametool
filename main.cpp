@@ -122,15 +122,61 @@ func update{
     )CODE";
 
     std::string code = R"CODE(
-func init{
-    push "4.0"
-    call_method std::sqrt
-    jump %l1
+type Baba{
+    sprite = @img1
+    direction = 1.0
     
-    print
-    %l1:
-    push "psyche!"
-    print 
+}
+
+func init{
+    push "baba"
+    create_instance Baba
+    set 0 
+}
+
+func update{
+    push "baba"
+    get_instance
+    set 0
+
+    get 0
+
+    get 0
+    get_pos
+
+    get 0
+    get_pos
+    get_x
+    push 128.0
+    less 
+    jump_if %back
+        get 0
+        push -1.0
+        push "direction"
+        set_field
+        jump %move
+    %back:
+        get 0
+        get_pos
+        get_x
+        push 0.0
+        more
+        jump_if %move
+        get 0
+        push 1.0
+        push "direction"
+        set_field
+    %move:
+
+    push 0.0
+    get 0
+    push "direction"
+    get_field
+    
+    make_vector
+    add
+    
+    set_pos
 }
     )CODE";
 

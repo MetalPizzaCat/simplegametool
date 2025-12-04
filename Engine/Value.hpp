@@ -10,7 +10,7 @@ namespace Engine
     {
         Bool,
         Int,
-        Double,
+        Float,
         Vector,
         Object,
         String,
@@ -21,4 +21,5 @@ namespace Engine
 
     std::string valueToString(Value const& v);
 
+    const char* typeToString(ValueType type);
 }

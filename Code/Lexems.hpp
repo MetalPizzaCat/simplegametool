@@ -10,6 +10,7 @@ namespace Code
     enum class FusionInstruction
     {
         CreateInstance,
+        GetInstance,
         Set,
         Get,
         Add,
@@ -35,7 +36,11 @@ namespace Code
         CallMethod,
         CallMethodStatic,
         Return,
-        End
+        End,
+        GetField,
+        SetField,
+        HasField,
+        GetConst,
     };
 
     enum class Keyword
@@ -66,6 +71,7 @@ namespace Code
 
     static const std::unordered_map<std::string, FusionInstruction> FusionInstructions = {
         {"create_instance", FusionInstruction::CreateInstance},
+        {"get_instance", FusionInstruction::GetInstance},
         {"set", FusionInstruction::Set},
         {"get", FusionInstruction::Get},
         {"add", FusionInstruction::Add},
@@ -91,7 +97,9 @@ namespace Code
         {"call", FusionInstruction::Call},
         {"call_method", FusionInstruction::CallMethod},
         {"ret", FusionInstruction::Return},
-        {"end", FusionInstruction::End}};
+        {"end", FusionInstruction::End},
+        {"get_field", FusionInstruction::GetField},
+        {"set_field", FusionInstruction::SetField}};
 
     static const std::map<char, Separator> Separators = {
         {':', Separator::Colon},
@@ -138,6 +146,7 @@ namespace Code
 
     static const std::map<FusionInstruction, FusionInstructionData> FusionInstructionsData = {
         {FusionInstruction::CreateInstance, FusionInstructionData{.instruction = Engine::Instructions::CreateInstance, .argumentTypes = {InstructionArgumentType::ObjectType}}},
+        {FusionInstruction::GetInstance, FusionInstructionData{.instruction = Engine::Instructions::GetInstanceByName, .argumentTypes = {}}},
         {FusionInstruction::Set, FusionInstructionData{.instruction = Engine::Instructions::SetLocal, .argumentTypes = {InstructionArgumentType::Int}}},
         {FusionInstruction::Get, FusionInstructionData{.instruction = Engine::Instructions::GetLocal, .argumentTypes = {InstructionArgumentType::Int}}},
         {FusionInstruction::Add, FusionInstructionData{.instruction = Engine::Instructions::Add, .argumentTypes = {}}},
@@ -161,5 +170,8 @@ namespace Code
         {FusionInstruction::CallMethod, FusionInstructionData{.instruction = Engine::Instructions::CallMethod, .argumentTypes = {InstructionArgumentType::MethodName}}},
         {FusionInstruction::CallMethodStatic, FusionInstructionData{.instruction = Engine::Instructions::CallMethodStatic, .argumentTypes = {InstructionArgumentType::MethodName}}},
         {FusionInstruction::Return, FusionInstructionData{.instruction = Engine::Instructions::Return, .argumentTypes = {}}},
+        {FusionInstruction::GetField, FusionInstructionData{.instruction = Engine::Instructions::GetField, .argumentTypes = {}}},
+        {FusionInstruction::SetField, FusionInstructionData{.instruction = Engine::Instructions::SetField, .argumentTypes = {}}},
+        {FusionInstruction::HasField, FusionInstructionData{.instruction = Engine::Instructions::HasField, .argumentTypes = {}}},
     };
 }

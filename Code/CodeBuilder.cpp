@@ -39,7 +39,7 @@ Engine::Runnable::RunnableCode Code::CodeBuilder::getRunnableCode() const
         .functions = m_functions,
         .types = m_types,
         .strings = m_strings,
-    };
+        .typeDeclarationLocations = m_typeDeclarationLocations};
 }
 
 void Code::CodeBuilder::createBlock()
@@ -70,6 +70,11 @@ Code::Debug::FunctionDebugInfo &Code::CodeBuilder::getOrCreateDebugEntryForFunct
         return m_functionDebugInfo.back();
     }
     return *it;
+}
+
+void Code::CodeBuilder::addTypeDeclarationLocation(std::string const &name, Debug::DebugInfoSourceData const &data)
+{
+    m_typeDeclarationLocations[name] = data;
 }
 
 void Code::CodeBlock::insert(std::vector<uint8_t> const &bytes)

@@ -9,6 +9,7 @@ namespace Engine
         None,
         LoadConstString,
         CreateInstance,
+        GetInstanceByName,
         PushInt,
         PushFloat,
         PushVector,
@@ -47,6 +48,10 @@ namespace Engine
         // Exit function without returning a value
         ExitFunction,
         // Return value from a function and  exit 
-        Return
+        Return,
+        GetField,
+        SetField,
+        HasField,
+        GetConst,
     };
 }

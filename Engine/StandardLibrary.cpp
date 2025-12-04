@@ -4,7 +4,7 @@
 void Engine::Standard::sqrt(Scene &scene)
 {
     Value a = scene.popFromStackOrError();
-    if (a.index() != ValueType::Double)
+    if (a.index() != ValueType::Float)
     {
         throw Errors::RuntimeMemoryError("Sqrt only accepts float");
     }

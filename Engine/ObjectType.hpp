@@ -14,17 +14,17 @@ namespace Engine
     {
     public:
         explicit ObjectType(SpriteFramesAsset const *sprite,
-                            std::map<std::string, Runnable::CodeConstantValue> const &fields,
-                            std::map<std::string, Runnable::RunnableFunction> const &methods);
+                            std::unordered_map<std::string, Runnable::CodeConstantValue> const &fields,
+                            std::unordered_map<std::string, Runnable::RunnableFunction> const &methods);
 
         explicit ObjectType(SpriteFramesAsset const *sprite,
                             ObjectType const *parentType,
-                            std::map<std::string, Runnable::CodeConstantValue> const &fields,
-                            std::map<std::string, Runnable::RunnableFunction> const &methods,
-                            std::map<std::string, std::function<void(Scene &scene)>> const &nativeMethods);
+                            std::unordered_map<std::string, Runnable::CodeConstantValue> const &fields,
+                            std::unordered_map<std::string, Runnable::RunnableFunction> const &methods,
+                            std::unordered_map<std::string, std::function<void(Scene &scene)>> const &nativeMethods);
         SpriteFramesAsset const *getSpriteData() const { return m_sprite; }
 
-        std::map<std::string, Runnable::CodeConstantValue> const &getFields() const { return m_fields; }
+        std::unordered_map<std::string, Runnable::CodeConstantValue> const &getFields() const { return m_fields; }
 
         bool hasMethod(std::string const &name) const { return m_methods.contains(name); }
 
@@ -35,11 +35,11 @@ namespace Engine
         void callNativeMethod(std::string const &name, Scene &scene) const;
 
     private:
-        std::map<std::string, Runnable::RunnableFunction> m_methods;
+        std::unordered_map<std::string, Runnable::RunnableFunction> m_methods;
         SpriteFramesAsset const *m_sprite;
         ObjectType const *m_parent;
-        std::map<std::string, Runnable::CodeConstantValue> m_fields;
-        std::map<std::string, std::function<void(Scene &scene)>> m_nativeMethods;
+        std::unordered_map<std::string, Runnable::CodeConstantValue> m_fields;
+        std::unordered_map<std::string, std::function<void(Scene &scene)>> m_nativeMethods;
     };
 
 }
