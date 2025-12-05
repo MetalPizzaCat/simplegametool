@@ -21,6 +21,10 @@ std::vector<std::unique_ptr<Code::Token>> Code::Parser::parseTokens()
         {
             tokens.push_back(std::move(instruction));
         }
+        else if (std::unique_ptr<VariableToken> var = parseVariableName(); var != nullptr)
+        {
+            tokens.push_back(std::move(var));
+        }
         else if (std::unique_ptr<AssetRefToken> assetRef = parseAssetRef(); assetRef != nullptr)
         {
             tokens.push_back(std::move(assetRef));
@@ -256,6 +260,25 @@ std::unique_ptr<Code::AssetRefToken> Code::Parser::parseAssetRef()
         throw Errors::ParsingError(m_column, m_row, "Expected asset name");
     }
     return std::make_unique<AssetRefToken>(m_row, m_column, id);
+}
+
+std::unique_ptr<Code::VariableToken> Code::Parser::parseVariableName()
+{
+ if (std::optional<char> ch = getCurrent(); !ch.has_value() || ch.value() != '$')
+    {
+        return nullptr;
+    }
+    advance();
+    std::string id;
+    for (; !isAtTheEnd() && (std::isalnum(*m_current) || *m_current == '_'); advance())
+    {
+        id += *m_current;
+    }
+    if (id == "")
+    {
+        throw Errors::ParsingError(m_column, m_row, "Expected asset name");
+    }
+    return std::make_unique<VariableToken>(m_row, m_column, id);
 }
 
 std::unique_ptr<Code::SeparatorToken> Code::Parser::parseSeparator()

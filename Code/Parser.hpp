@@ -43,10 +43,12 @@ namespace Code
         std::unique_ptr<IdToken> parseId();
 
         std::unique_ptr<LabelToken> parseLabel();
-        
+
         std::unique_ptr<StringToken> parseString();
 
         std::unique_ptr<AssetRefToken> parseAssetRef();
+
+        std::unique_ptr<VariableToken> parseVariableName();
 
         std::unique_ptr<SeparatorToken> parseSeparator();
 

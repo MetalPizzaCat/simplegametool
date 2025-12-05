@@ -68,64 +68,40 @@ int main(int, char **)
 
     using namespace Code;
 
-    std::string code2 = R"CODE(
-
-
-
-
-
-type Thing  {
-    sprite = @img1 # {"./assets/image.png", x = 0, y = 0, width = 16, height = 16}
-    some_var = 0
-    other_val = (0, 0)
-    even_more = "wowza"
-
-    func init {
-        push 0
-        set 1
-    %l1:
-        push "hello from thing!"
-        print 
-        get 0
-        push 10
-        less
-        jump_if %l1
-    }
-
-    func update {
-    }
-
-    func clicked {
-        
-    }
-}
-
-func start {
-    create_instance Thing
-    set 0
-}
-
-
-func update{
-    get 0
-
-    get 0
-    get_pos
-
-    push 0.0
-    push 1.0
-    make_vector
-    add
-
-    set_pos
-}
-    )CODE";
 
     std::string code = R"CODE(
 type Baba{
     sprite = @img1
     direction = 1.0
-    
+
+    func on_animation_ended (self) {
+        vars a, b, d
+        push "first"
+        push "second"
+        call_method_static Self::thing
+
+        get $self    
+        push "direction"
+        get_field 
+        print
+        push "wow aniamtion over!"    
+        print
+
+        get $self
+        call_method do_thing
+    }
+
+    func do_thing(self){
+        push "indeed doing a thing!"    
+        print 
+    }
+
+    func thing(a, b) {
+        get $a
+        print 
+        get $b
+        print
+    }
 }
 
 func init{
@@ -135,41 +111,43 @@ func init{
 }
 
 func update{
+    vars baba 
+    # baba = get_object("baba")
     push "baba"
     get_instance
-    set 0
+    set $baba
 
-    get 0
+    get $baba
 
-    get 0
+    get $baba
     get_pos
 
-    get 0
+    get $baba
     get_pos
     get_x
     push 128.0
     less 
     jump_if %back
-        get 0
+        get $baba
         push -1.0
         push "direction"
         set_field
         jump %move
     %back:
-        get 0
+        get $baba
         get_pos
         get_x
         push 0.0
         more
         jump_if %move
-        get 0
+        get $baba
         push 1.0
         push "direction"
         set_field
     %move:
 
     push 0.0
-    get 0
+    get $baba
     push "direction"
     get_field
     
@@ -189,8 +167,8 @@ func update{
                                                                                                                sf::IntRect(sf::Vector2i(24, 0), sf::Vector2i(24, 24)),
                                                                                                                sf::IntRect(sf::Vector2i(48, 0), sf::Vector2i(24, 24)),
                                                                                                                sf::IntRect(sf::Vector2i(72, 0), sf::Vector2i(24, 24))},
-                                                                                                           .framesPerSecond = 15,
-                                                                                                           .looping = true}}},
+                                                                                                           .framesPerSecond = 1,
+                                                                                                           .looping = false}}},
                                                                                        sf::IntRect(sf::Vector2i(0, 0), sf::Vector2i(24, 24))));
     try
     {

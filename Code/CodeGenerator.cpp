@@ -89,9 +89,30 @@ std::pair<std::string, Engine::Runnable::RunnableFunction> Code::Fusion::FusionC
     IdToken const *name = getTokenOrError<IdToken>("expected function name");
     Debug::FunctionDebugInfo &debugInfo = m_builder.getOrCreateDebugEntryForFunction(typeId, name->getId());
     advance();
+    m_builder.createBlock();
+    std::vector<std::string> argumentNames;
+    if (isSeparator(Separator::BracketOpen))
+    {
+        advance();
+        while (getCurrent() != nullptr)
+        {
+            argumentNames.push_back(getTokenOrError<IdToken>("Expected argument name")->getId());
+            m_builder.getCurrentBlock().addVariableName(getTokenOrError<IdToken>("Expected argument name")->getId());
+            advance();
+            if (isSeparator(Separator::Comma))
+            {
+                advance();
+            }
+            else if (isSeparator(Separator::BracketClose))
+            {
+                break;
+            }
+        }
+        consumeSeparator(Separator::BracketClose, "Expected ')'");
+    }
     consumeSeparator(Separator::BlockOpen, "expected '{'");
     consumeEndOfStatement();
-    m_builder.createBlock();
+
     while (getCurrent() != nullptr)
     {
         if (isOfType<SeparatorToken>())
@@ -163,6 +184,19 @@ std::pair<std::string, Engine::Runnable::RunnableFunction> Code::Fusion::FusionC
             debugInfo.addByteRangeFromPrevious(bytes.size(), token->getRow(), token->getColumn());
             consumeEndOfStatementOrError("Expected new line or ';'");
         }
+        else if (token->getInstruction() == FusionInstruction::Vars)
+        {
+            while (isOfType<IdToken>())
+            {
+                m_builder.getCurrentBlock().addVariableName(getTokenOrError<IdToken>("Expected variable name")->getId());
+                advance();
+                if (isSeparator(Separator::Comma))
+                {
+                    advance();
+                }
+            }
+            consumeEndOfStatementOrError("expected new line or ';'");
+        }
         // jump is handled entirely differently because it works using relative offsets
         else if (token->getInstruction() == FusionInstruction::Jump || token->getInstruction() == FusionInstruction::JumpIf)
         {
@@ -192,7 +226,7 @@ std::pair<std::string, Engine::Runnable::RunnableFunction> Code::Fusion::FusionC
     m_builder.getCurrentBlock().applyLabels();
     std::vector<uint8_t> temp = m_builder.getCurrentBlock().getBytes();
     m_builder.popBlock();
-    return std::make_pair(name->getId(), Engine::Runnable::RunnableFunction{.argumentCount = 0, .bytes = std::move(temp)});
+    return std::make_pair(name->getId(), Engine::Runnable::RunnableFunction{.argumentCount = argumentNames.size(), .bytes = std::move(temp)});
 }
 
 void Code::Fusion::FusionCodeGenerator::parseInstruction(FusionInstruction instruction, Debug::FunctionDebugInfo &debugInfo)
@@ -279,6 +313,31 @@ void Code::Fusion::FusionCodeGenerator::parseInstruction(FusionInstruction instr
             else
             {
                 error("Unknown type '" + getTokenOrError<IdToken>("Expected type name")->getId() + "'");
+            }
+        }
+        break;
+        case InstructionArgumentType::VariableName:
+        {
+            if (isOfType<VariableToken>())
+            {
+                if (std::optional<size_t> id = m_builder.getCurrentBlock().getVariableId(getTokenOrError<VariableToken>("Expected variable name")->getId()); id.has_value())
+                {
+                    std::vector<uint8_t> b = parseToBytes(id.value());
+                    bytes.insert(bytes.end(), b.begin(), b.end());
+                }
+                else
+                {
+                    error("No variable with name '" + getTokenOrError<VariableToken>("Expected variable name")->getId() + "' is present in current block");
+                }
+            }
+            else if (int64_t varId = getTokenOrError<IntToken>("Expected variable id")->getValue(); varId >= 0)
+            {
+                std::vector<uint8_t> b = parseToBytes(varId);
+                bytes.insert(bytes.end(), b.begin(), b.end());
+            }
+            else
+            {
+                error("Variable id must be higher than 0");
             }
         }
         break;

@@ -53,7 +53,7 @@ add_executable(simplegametool main.cpp
     Engine/StandardLibrary.cpp
 )
 
-target_link_libraries(simplegametool PRIVATE SFML::Graphics)
+target_link_libraries(simplegametool PRIVATE SFML::Graphics SFML::Audio)
 
 
 target_compile_definitions(simplegametool PUBLIC ASSETS_PATH="${CMAKE_CURRENT_SOURCE_DIR}/assets/")

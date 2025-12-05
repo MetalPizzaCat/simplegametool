@@ -6,13 +6,37 @@
 namespace Engine
 {
 
+    class Asset
+    {
+
+    public:
+        explicit Asset(std::string const &path);
+        std::string const &getPath() const { return m_path; }
+
+        virtual ~Asset() {}
+
+    private:
+        std::string m_path;
+    };
+
+    class SoundAsset : public Asset
+    {
+    public:
+        
+    private:
+        float m_pitch;
+        float m_defaultVolume;
+        bool m_looping;
+        bool m_positional;
+    };
+
     struct SpriteAnimation
     {
         std::vector<sf::IntRect> frames;
         int32_t framesPerSecond;
         bool looping;
     };
-    class SpriteFramesAsset
+    class SpriteFramesAsset : public Asset
     {
     public:
         explicit SpriteFramesAsset(std::string const &path, std::map<std::string, SpriteAnimation> const &frames, sf::IntRect defaultFrame);
@@ -20,13 +44,11 @@ namespace Engine
 
         sf::IntRect getDefaultFrame() const { return m_defaultFrame; }
 
-        std::string const &getPath() const { return m_path; }
-
         bool hasAnimation(std::string const &name) const { return m_frames.contains(name); }
 
     private:
         std::map<std::string, SpriteAnimation> m_frames;
-        std::string m_path;
+
         sf::IntRect m_defaultFrame;
     };
 }

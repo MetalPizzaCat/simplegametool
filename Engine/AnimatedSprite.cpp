@@ -5,7 +5,9 @@ Engine::AnimatedSprite::AnimatedSprite(sf::Sprite sprite, SpriteFramesAsset cons
                                                                                              m_frames(frames)
 {
     m_animTime = 0;
+    m_currentAnimationFrame = 0;
     m_currentAnimationName = "default";
+    m_finishedAnimation = false;
 }
 
 void Engine::AnimatedSprite::draw(sf::RenderWindow &window)
@@ -34,6 +36,10 @@ void Engine::AnimatedSprite::update(float delta)
             else
             {
                 m_finishedAnimation = true;
+                if (m_animationFinishedCallback)
+                {
+                    m_animationFinishedCallback();
+                }
                 return;
             }
         }

@@ -54,6 +54,10 @@ namespace Code
         /// @return
         bool labelExists(std::string const &name) const { return m_jumpLabelLocations.contains(name); }
 
+        size_t addVariableName(std::string const &name);
+
+        std::optional<size_t> getVariableId(std::string const &name) const;
+
         /// @brief Write correct jump info into the resevered address spaces
         void applyLabels();
 
@@ -63,6 +67,7 @@ namespace Code
         std::map<std::string, std::vector<CodeJumpInfo>> m_jumpLabelDestinations;
         std::map<std::string, size_t> m_jumpLabelLocations;
         std::vector<uint8_t> m_bytes;
+        std::vector<std::string> m_variables;
     };
 
     class CodeBuilder
@@ -91,7 +96,7 @@ namespace Code
 
         Debug::FunctionDebugInfo &getOrCreateDebugEntryForFunction(size_t typeId, std::string const &functionName);
 
-        void addTypeDeclarationLocation(std::string const& name, Debug::DebugInfoSourceData const& data);
+        void addTypeDeclarationLocation(std::string const &name, Debug::DebugInfoSourceData const &data);
 
     private:
         std::vector<CodeBlock> m_blocks;

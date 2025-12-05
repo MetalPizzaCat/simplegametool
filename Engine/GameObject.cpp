@@ -31,6 +31,10 @@ Engine::GameObject::GameObject(ObjectType const *type, std::string const &name, 
             break;
         }
     }
+    if (m_sprite)
+    {
+        m_sprite->setAnimationFinishedCallback(std::bind(&GameObject::spriteAnimationFinishedCallback, this));
+    }
 }
 
 void Engine::GameObject::draw(sf::RenderWindow &window)
@@ -73,4 +77,9 @@ std::optional<Engine::Value> Engine::GameObject::getFieldValue(std::string const
 void Engine::GameObject::setFieldValue(std::string const &name, Value const &val)
 {
     m_fields[name] = val;
+}
+
+void Engine::GameObject::spriteAnimationFinishedCallback()
+{
+    m_hasAnimationJustFinished = true;
 }

@@ -13,6 +13,12 @@ size_t Code::CodeBuilder::addType(Engine::Runnable::TypeInfo const &type)
 
 std::optional<size_t> Code::CodeBuilder::getTypeByName(std::string const &name)
 {
+    // self means we are working withing the current type, so no matter what the only id that is viable is next item id
+    // types can't be nested and if declaration is interrupted the whole process is aborted
+    if (name == "Self")
+    {
+        return m_types.size();
+    }
     if (std::vector<Engine::Runnable::TypeInfo>::const_iterator it = std::find_if(m_types.begin(), m_types.end(), [name](Engine::Runnable::TypeInfo const &t)
                                                                                   { return t.getName() == name; });
         it != m_types.end())
@@ -93,6 +99,22 @@ void Code::CodeBlock::reserveBytesForJump()
 void Code::CodeBlock::addLabelPosition(std::string const &name, size_t pos)
 {
     m_jumpLabelLocations[name] = pos;
+}
+
+size_t Code::CodeBlock::addVariableName(std::string const &name)
+{
+    m_variables.push_back(name);
+    return m_variables.size();
+}
+
+std::optional<size_t> Code::CodeBlock::getVariableId(std::string const &name) const
+{
+    if (std::vector<std::string>::const_iterator it = std::find(m_variables.begin(), m_variables.end(), name);
+        it != m_variables.end())
+    {
+        return it - m_variables.begin();
+    }
+    return {};
 }
 
 void Code::CodeBlock::applyLabels()

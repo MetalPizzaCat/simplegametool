@@ -47,6 +47,23 @@ namespace Engine
         /// @param debugInfo Optional information that is used for figuring out code location in case of an error
         void runFunction(Runnable::RunnableFunction const &func, std::optional<Runnable::RunnableFunctionDebugInfo> const &debugInfo);
 
+        /// @brief Run method of a provided object passing any debug info that is available
+        /// @param instance Instance to run the method from
+        /// @param methodName Name of the method to run
+        inline void runMethod(GameObject *instance, std::string const &methodName)
+        {
+            // methods should all technically expect self as first argument
+            pushToStack(instance);
+            if (std::optional<size_t> typeId = getIdForType(instance->getType()); typeId.has_value())
+            {
+                runFunction(instance->getType()->getMethod(methodName), Runnable::RunnableFunctionDebugInfo{.typeId = typeId.value(), .functionName = methodName});
+            }
+            else
+            {
+                runFunction(instance->getType()->getMethod(methodName), {});
+            }
+        }
+
         void addType(std::string const &name, std::unique_ptr<ObjectType> type)
         {
             m_types.push_back(std::move(type));
@@ -86,16 +103,16 @@ namespace Engine
         /// @brief Pop value from current stack frame or throw error if no stack frame exists or stack is empty
         Value popFromStackOrError();
 
-        /// @brief Attempt to get value from top of the current stack frame as given type. Throws error if no value is present or 
-        /// @tparam T 
-        /// @param errorMessage 
-        /// @return 
+        /// @brief Attempt to get value from top of the current stack frame as given type. Throws error if no value is present or
+        /// @tparam T
+        /// @param errorMessage
+        /// @return
         template <class T>
         T popFromStackAsType(std::string const &errorMessage)
         {
-            if(m_operationStack.empty())
+            if (m_operationStack.empty())
             {
-                  throw Errors::RuntimeMemoryError("Can not pop from stack because stack is empty");
+                throw Errors::RuntimeMemoryError("Can not pop from stack because stack is empty");
             }
             if (!std::holds_alternative<T>(m_operationStack.back().back()))
             {
@@ -105,7 +122,6 @@ namespace Engine
             m_operationStack.back().pop_back();
             return std::get<T>(v);
         }
-
 
         /// @brief Set value of the variable in the current block
         /// @param id Id of the variable(block will be resized to fit)

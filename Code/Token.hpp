@@ -82,7 +82,20 @@ namespace Code
         std::string m_str;
     };
 
-     class LabelToken : public Token
+    class VariableToken : public Token
+    {
+    public:
+        explicit VariableToken(size_t row, size_t column, std::string const &str) : Token(row, column), m_id(str) {}
+
+        std::string toString() const override;
+
+        std::string const &getId() const { return m_id; }
+
+    private:
+        std::string m_id;
+    };
+
+    class LabelToken : public Token
     {
     public:
         explicit LabelToken(size_t row, size_t column, std::string const &str) : Token(row, column), m_str(str) {}
@@ -132,7 +145,6 @@ namespace Code
         double m_number;
     };
 
-    
     class BoolToken : public Token
     {
         explicit BoolToken(size_t row, size_t column, bool val) : Token(row, column), m_val(val) {}

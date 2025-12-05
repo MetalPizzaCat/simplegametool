@@ -41,16 +41,14 @@ void Engine::Scene::update(float delta)
     for (auto const &obj : m_objects)
     {
         obj->update(delta);
-        if (m_objects.back()->getType()->hasMethod("update"))
+        if (obj->getType()->hasMethod("update"))
         {
-            if (std::optional<size_t> typeId = getIdForType(obj->getType()); typeId.has_value())
-            {
-                runFunction(m_objects.back()->getType()->getMethod("update"), Runnable::RunnableFunctionDebugInfo{.typeId = typeId.value(), .functionName = "update"});
-            }
-            else
-            {
-                runFunction(m_objects.back()->getType()->getMethod("update"), {});
-            }
+            runMethod(obj.get(), "update");
+        }
+        if (obj->hasAnimationJustFinished())
+        {
+            obj->setAnimationJustFinished(false);
+            runMethod(obj.get(), "on_animation_ended");
         }
     }
     if (hasFunction("update"))
@@ -448,6 +446,29 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
             case Instructions::LessOrEquals:
                 break;
             case Instructions::CallMethod:
+            {
+                GameObject *obj = popFromStackAsType<GameObject *>("Expected object on stack to call method from");
+                size_t id = parseOperationConstant<size_t>(func.bytes.begin() + pos + 1, func.bytes.end());
+                pos += sizeof(size_t);
+                if (std::optional<std::string> nameStr = getConstantStringById(id); nameStr.has_value())
+                {
+                    if (obj->getType()->isNativeMethod(nameStr.value()))
+                    {
+                        pushToStack(obj);
+                        obj->getType()->callNativeMethod(nameStr.value(), *this);
+                    }
+                    else
+                    {
+                        runMethod(obj, nameStr.value());
+                    }
+                }
+                else
+                {
+                    error(debugInfo, pos, "Invalid string constant id");
+                }
+            }
+            break;
+            case Instructions::CallMethodStatic:
             {
                 size_t typeId = parseOperationConstant<size_t>(func.bytes.begin() + (pos + 1), func.bytes.end());
                 pos += sizeof(size_t);

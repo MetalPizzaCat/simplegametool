@@ -27,7 +27,15 @@ namespace Engine
         std::optional<Value> getFieldValue(std::string const &name) const;
 
         void setFieldValue(std::string const &name, Value const &val);
+
+        bool hasAnimationJustFinished() const { return m_hasAnimationJustFinished; }
+
+        void setAnimationJustFinished(bool has) { m_hasAnimationJustFinished = has; }
+        
         virtual ~GameObject() = default;
+
+    protected:
+        void spriteAnimationFinishedCallback();
 
     private:
         std::string m_name;
@@ -36,5 +44,6 @@ namespace Engine
         sf::Vector2f m_position;
         bool m_visible;
         std::unordered_map<std::string, Value> m_fields;
+        bool m_hasAnimationJustFinished = false;
     };
 }

@@ -130,3 +130,8 @@ std::string Code::LabelToken::toString() const
 {
     return std::string("LABEL(") + m_str + ")";
 }
+
+std::string Code::VariableToken::toString() const
+{
+    return std::string("VAR(") + m_id + ")";
+}

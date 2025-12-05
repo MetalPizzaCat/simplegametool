@@ -39,4 +39,5 @@ const char *Engine::typeToString(ValueType type)
     case ValueType::String:
         return "String";
     }
+    return "INVALID DATA TYPE";
 }

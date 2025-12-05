@@ -1,5 +1,6 @@
 #pragma once
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include <map>
 #include <memory>
 #include "Asset.hpp"
@@ -34,6 +35,7 @@ namespace Engine
 
     private:
         std::map<std::string, std::unique_ptr<sf::Texture>> m_textures;
+        std::map<std::string, std::unique_ptr<sf::SoundBuffer>> m_sounds;
         std::map<std::string, std::unique_ptr<SpriteFramesAsset>> m_assets;
     };
 }
