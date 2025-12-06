@@ -68,7 +68,6 @@ int main(int, char **)
 
     using namespace Code;
 
-
     std::string code = R"CODE(
 type Baba{
     sprite = @img1
@@ -107,11 +106,27 @@ type Baba{
 func init{
     push "baba"
     create_instance Baba
+    push "baba_mouse"
+    create_instance Baba
     push 8.0
     call_method_static std::sqrt
     print
     get_const std::pi
     print
+}
+
+func on_key_down(key){
+    push "you pressed a key!"
+    print
+    get $key
+    print
+}
+
+func on_mouse_move(pos){
+    push "baba_mouse"
+    get_instance
+    get $pos
+    set_pos
 }
 
 func update{
@@ -190,6 +205,14 @@ func update{
                 if (event->is<sf::Event::Closed>())
                 {
                     window.close();
+                }
+                else if (const sf::Event::KeyPressed *keyPress = event->getIf<sf::Event::KeyPressed>())
+                {
+                    scene.handleKeyboardPress(keyPress->scancode);
+                }
+                else if (const sf::Event::MouseMoved *mouseMove = event->getIf<sf::Event::MouseMoved>())
+                {
+                    scene.handleMouseMove(sf::Vector2f(mouseMove->position.x, mouseMove->position.y));
                 }
             }
             scene.update(deltaTime.asSeconds());

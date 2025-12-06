@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <string>
+#include <iostream>
 namespace Engine
 {
     class MemoryObject

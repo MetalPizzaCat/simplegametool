@@ -1,6 +1,7 @@
 #include "Scene.hpp"
 #include "Error.hpp"
 #include "StandardLibrary.hpp"
+#include "Input.hpp"
 
 #include <numbers>
 
@@ -14,6 +15,26 @@ Engine::Scene::Scene(Runnable::RunnableCode const &code) : m_strings(code.string
                                                 std::unordered_map<std::string, Runnable::CodeConstantValue>{{"pi", std::numbers::pi}}, // constants
                                                 std::unordered_map<std::string, Runnable::RunnableFunction>(),                          // methods
                                                 std::unordered_map<std::string, std::function<void(Scene & scene)>>{{"sqrt", Standard::sqrt}}));
+
+    addType("Input", std::make_unique<ObjectType>(nullptr,
+                                                  nullptr,
+                                                  std::unordered_map<std::string, Runnable::CodeConstantValue>(), // fields
+                                                  std::unordered_map<std::string, Runnable::CodeConstantValue>{}, // constants
+                                                  std::unordered_map<std::string, Runnable::RunnableFunction>(),  // methods
+                                                  std::unordered_map<std::string, std::function<void(Scene & scene)>>{{"is_key_pressed", Standard::sqrt}}));
+
+    addType("Scancode", std::make_unique<ObjectType>(nullptr,
+                                                     nullptr,
+                                                     std::unordered_map<std::string, Runnable::CodeConstantValue>(), // fields
+                                                     Input::Scancodes,                                               // constants
+                                                     std::unordered_map<std::string, Runnable::RunnableFunction>(),  // methods
+                                                     std::unordered_map<std::string, std::function<void(Scene & scene)>>()));
+    addType("MouseButton", std::make_unique<ObjectType>(nullptr,
+                                                        nullptr,
+                                                        std::unordered_map<std::string, Runnable::CodeConstantValue>(), // fields
+                                                        Input::MouseButtons,                                            // constants
+                                                        std::unordered_map<std::string, Runnable::RunnableFunction>(),  // methods
+                                                        std::unordered_map<std::string, std::function<void(Scene & scene)>>()));
     for (Runnable::TypeInfo const &type : code.types)
     {
         if (type.isDefaultType())
@@ -58,6 +79,43 @@ void Engine::Scene::update(float delta)
     {
         runFunctionByName("update");
     }
+}
+
+void Engine::Scene::draw(sf::RenderWindow &window)
+{
+    for (std::unique_ptr<GameObject> const &obj : m_objects)
+    {
+        obj->draw(window);
+    }
+}
+void Engine::Scene::callSceneAndObjectScriptFunctionHandlers(std::string const &eventName, std::vector<Value> const &arguments)
+{
+    for (auto const &obj : m_objects)
+    {
+        if (obj->getType()->hasMethod(eventName))
+        {
+            appendArrayToStack(arguments);
+            runMethod(obj.get(), eventName);
+        }
+        if (obj->hasAnimationJustFinished())
+        {
+            appendArrayToStack(arguments);
+            runMethod(obj.get(), eventName);
+        }
+    }
+    if (hasFunction(eventName))
+    {
+        appendArrayToStack(arguments);
+        runFunctionByName(eventName);
+    }
+}
+void Engine::Scene::handleKeyboardPress(sf::Keyboard::Scancode scancode)
+{
+    callSceneAndObjectScriptFunctionHandlers("on_key_down", {(int64_t)scancode});
+}
+void Engine::Scene::handleMouseMove(sf::Vector2f position)
+{
+    callSceneAndObjectScriptFunctionHandlers("on_mouse_move", {position});
 }
 
 Engine::StringObject *Engine::Scene::createString(std::string const &str)
@@ -137,6 +195,15 @@ void Engine::Scene::pushToStack(Value const &v)
     m_operationStack.back().push_back(v);
 }
 
+void Engine::Scene::appendArrayToStack(std::vector<Value> const &values)
+{
+    if (m_operationStack.empty())
+    {
+        throw Errors::RuntimeMemoryError("Can not push to stack because no stack frame is available");
+    }
+    m_operationStack.back().insert(m_operationStack.back().end(), values.begin(), values.end());
+}
+
 std::optional<size_t> Engine::Scene::getIdForType(ObjectType const *type) const
 {
     if (std::vector<std::unique_ptr<ObjectType>>::const_iterator it = std::find_if(m_types.begin(), m_types.end(), [type](std::unique_ptr<ObjectType> const &t)
@@ -190,7 +257,6 @@ void Engine::Scene::collectGarbage()
 
 void Engine::Scene::runFunctionByName(std::string const &name)
 {
-
     Runnable::RunnableFunction const &func = m_functions.at(name);
     runFunction(func, Runnable::RunnableFunctionDebugInfo((size_t)-1, name));
 }

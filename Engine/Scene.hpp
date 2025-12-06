@@ -24,19 +24,28 @@ namespace Engine
     class Scene
     {
     public:
+        /// @brief Create a new instance of scene object based on runnable code data
+        /// @param code Code data to create from
         explicit Scene(Runnable::RunnableCode const &code);
 
         /// @brief Update all objects present in the scene and run their user defined update functions
         /// @param delta
         void update(float delta);
 
-        void draw(sf::RenderWindow &window)
-        {
-            for (std::unique_ptr<GameObject> const &obj : m_objects)
-            {
-                obj->draw(window);
-            }
-        }
+        void draw(sf::RenderWindow &window);
+
+        /// @brief Call handlers for given event in scene and object scripts if handlers are present
+        /// @param eventName Name of the event function(e.g. on_key_down, on_mouse_move)
+        /// @param arguments Arguments to pass to functions
+        void callSceneAndObjectScriptFunctionHandlers(std::string const& eventName, std::vector<Value> const& arguments);
+
+        /// @brief Call handlers for key down even in scene and object scripts
+        /// @param scancode Key scancode
+        void handleKeyboardPress(sf::Keyboard::Scancode scancode);
+
+        /// @brief Call handlers for mouse move event in scene and object scripts
+        /// @param position Position relative to top left corner converted to floating point values
+        void handleMouseMove(sf::Vector2f position);
 
         /// @brief Run function with a given name until the function ends
         /// @param name Name of the function
@@ -75,8 +84,14 @@ namespace Engine
             m_functions[name] = function;
         }
 
+        /// @brief Check if given instance of scene has a function with given name
+        /// @param name Function name
+        /// @return
         bool hasFunction(std::string const &name) const { return m_functions.contains(name); }
 
+        /// @brief Create a new string object and store it in the memory list
+        /// @param str String to create the object from
+        /// @return Pointer to the managed string object
         StringObject *createString(std::string const &str);
 
         /// @brief Parse next `sizeof(T)` bytes into a T value using bitshifts and reinterpret cast
@@ -96,6 +111,9 @@ namespace Engine
             return *f;
         }
 
+        /// @brief Attempt to get string constant by id and throw memory error if no string uses given id
+        /// @param id Id of the string constant
+        /// @return String value
         std::string getConstantStringById(size_t id) const;
 
         std::optional<std::string> getTypeNameById(size_t id) const;
@@ -140,6 +158,10 @@ namespace Engine
         /// @brief Push value onto the currect stack, or throw error if no stack exists
         /// @param v Value to push
         void pushToStack(Value const &v);
+
+        /// @brief Push list of values onto the current stack or throw and error if no stack exists
+        /// @param values Values to push
+        void appendArrayToStack(std::vector<Value> const& values);
 
         std::optional<size_t> getIdForType(ObjectType const *type) const;
 
