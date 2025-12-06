@@ -11,12 +11,16 @@ namespace Code::Fusion
     class FusionCodeGenerator
     {
     public:
-        explicit FusionCodeGenerator(std::vector<std::unique_ptr<Token>> tokens) : m_tokens(std::move(tokens)), m_it(m_tokens.begin()) {}
+        explicit FusionCodeGenerator(std::vector<std::unique_ptr<Token>> tokens, std::vector<std::string> const &defaultTypes);
 
         void generate();
 
         Token const *getCurrent() const;
 
+        /// @brief Attempt to get token of given type or throw an error if current token is null or of a wrong type without advancing the iterator
+        /// @tparam T Type of the token
+        /// @param errorMessage Message to display on failure
+        /// @return Casted token
         template <class T>
         T const *getTokenOrError(std::string const &errorMessage)
         {
@@ -28,6 +32,9 @@ namespace Code::Fusion
             return nullptr;
         }
 
+        /// @brief Check if current token is of a given type. Works as a wrapper around c++ casting for simplicity
+        /// @tparam T Type of the token to check for
+        /// @return False if of a wrong type or null, true otherwise
         template <class T>
         bool isOfType()
         {

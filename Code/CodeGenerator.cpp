@@ -1,6 +1,11 @@
 #include "CodeGenerator.hpp"
 #include "Error.hpp"
 
+Code::Fusion::FusionCodeGenerator::FusionCodeGenerator(std::vector<std::unique_ptr<Token>> tokens, std::vector<std::string> const &defaultTypes)
+    : m_tokens(std::move(tokens)), m_it(m_tokens.begin()), m_builder(defaultTypes)
+{
+}
+
 void Code::Fusion::FusionCodeGenerator::generate()
 {
     consumeEndOfStatement();
@@ -47,7 +52,11 @@ void Code::Fusion::FusionCodeGenerator::parseTypeDeclaration()
     using namespace Engine::Runnable;
     consumeKeyword(Keyword::Type, "Expected 'type'");
     IdToken const *name = getTokenOrError<IdToken>("expected type name");
-    m_builder.addTypeDeclarationLocation(name->getId(), Debug::DebugInfoSourceData{.row = name->getRow(), .column = name->getColumn()});
+
+    if (!m_builder.addTypeDeclarationLocation(name->getId(), Debug::DebugInfoSourceData{.row = name->getRow(), .column = name->getColumn()}))
+    {
+        error("Type with name '" + name->getId() + "' already exists");
+    }
     advance();
     consumeSeparator(Separator::BlockOpen, "expected '{'");
     optionallyConsumeSeparator(Separator::EndOfStatement);
@@ -57,15 +66,28 @@ void Code::Fusion::FusionCodeGenerator::parseTypeDeclaration()
     advance();
     consumeEndOfStatement();
     std::unordered_map<std::string, CodeConstantValue> fields;
-    IdToken const *fieldTok = nullptr;
-    while ((fieldTok = dynamic_cast<IdToken const *>(getCurrent())) != nullptr)
+    std::unordered_map<std::string, CodeConstantValue> constants;
+
+    while (isOfType<IdToken>() || isKeyword(Keyword::Const))
     {
+        bool isConst = false;
+        if (isKeyword(Keyword::Const))
+        {
+            isConst = true;
+        }
+        IdToken const *fieldTok = getTokenOrError<IdToken>("Expected field name");
         advance();
         consumeSeparator(Separator::Equals, "Expected '='");
         CodeConstantValue val = parseConstant("Expected value");
         advance();
-        fields[fieldTok->getId()] = val;
-
+        if (isConst)
+        {
+            constants[fieldTok->getId()] = val;
+        }
+        else
+        {
+            fields[fieldTok->getId()] = val;
+        }
         consumeEndOfStatement();
     }
     std::unordered_map<std::string, RunnableFunction> methods;
@@ -79,7 +101,12 @@ void Code::Fusion::FusionCodeGenerator::parseTypeDeclaration()
 
     consumeSeparator(Separator::BlockClose, "expected '}'");
 
-    m_builder.addType(TypeInfo(name->getId(), spriteName->getAssetName(), fields, methods));
+    // times likes this is when i miss how rust handles errors, but alas i can't be bothered to fight borrow checker
+    // we check fot this twice because default types don't have debug file location, because they are not in any file
+    if (m_builder.addType(TypeInfo(name->getId(), spriteName->getAssetName(), fields, constants, methods, false)) == (size_t)-1)
+    {
+        throw Errors::ParsingError(name->getRow(), name->getColumn(), "Type with name '" + name->getId() + "' already exists");
+    }
 }
 
 std::pair<std::string, Engine::Runnable::RunnableFunction> Code::Fusion::FusionCodeGenerator::parseFunctionDeclaration(size_t typeId)

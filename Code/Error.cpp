@@ -13,4 +13,11 @@ Code::Errors::ParsingError::ParsingError(std::string const &msg) : m_message(msg
 {
 }
 
+const char *Code::Errors::MultipleTypeDefinitionError::what() const throw()
+{
+    return m_message.c_str();
+}
 
+Code::Errors::MultipleTypeDefinitionError::MultipleTypeDefinitionError(std::string const &msg) : m_message(msg)
+{
+}

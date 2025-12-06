@@ -51,6 +51,7 @@ namespace Code
         End,
         Type,
         Of,
+        Const,
     };
 
     enum class Separator
@@ -69,7 +70,8 @@ namespace Code
         {"func", Keyword::Function},
         {"end", Keyword::End},
         {"type", Keyword::Type},
-        {"of", Keyword::Of}};
+        {"of", Keyword::Of},
+        {"const", Keyword::Const}};
 
     static const std::unordered_map<std::string, FusionInstruction> FusionInstructions = {
         {"create_instance", FusionInstruction::CreateInstance},
@@ -103,7 +105,8 @@ namespace Code
         {"end", FusionInstruction::End},
         {"get_field", FusionInstruction::GetField},
         {"set_field", FusionInstruction::SetField},
-        {"vars", FusionInstruction::Vars}};
+        {"vars", FusionInstruction::Vars},
+        {"get_const", FusionInstruction::GetConst}};
 
     static const std::map<char, Separator> Separators = {
         {':', Separator::Colon},
@@ -177,6 +180,7 @@ namespace Code
         {FusionInstruction::Return, FusionInstructionData{.instruction = Engine::Instructions::Return, .argumentTypes = {}}},
         {FusionInstruction::GetField, FusionInstructionData{.instruction = Engine::Instructions::GetField, .argumentTypes = {}}},
         {FusionInstruction::SetField, FusionInstructionData{.instruction = Engine::Instructions::SetField, .argumentTypes = {}}},
+        {FusionInstruction::GetConst, FusionInstructionData{.instruction = Engine::Instructions::GetConst, .argumentTypes = {InstructionArgumentType::MethodName}}},
         {FusionInstruction::HasField, FusionInstructionData{.instruction = Engine::Instructions::HasField, .argumentTypes = {}}},
     };
 }

@@ -96,7 +96,7 @@ namespace Engine
             return *f;
         }
 
-        std::optional<std::string> getConstantStringById(size_t id) const;
+        std::string getConstantStringById(size_t id) const;
 
         std::optional<std::string> getTypeNameById(size_t id) const;
 

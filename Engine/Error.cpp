@@ -44,3 +44,4 @@ const char *Engine::Errors::ExecutionError::what() const throw()
 Engine::Errors::ExecutionError::ExecutionError(std::string const &msg) : m_message(msg)
 {
 }
+

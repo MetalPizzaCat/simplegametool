@@ -2,11 +2,21 @@
 #include <algorithm>
 #include "../Engine/Instructions.hpp"
 #include "Error.hpp"
-Code::CodeBuilder::CodeBuilder() : m_types({Engine::Runnable::TypeInfo("std", "", {}, {})})
+Code::CodeBuilder::CodeBuilder(std::vector<std::string> const &defaultTypes)
 {
+    for (std::string const &typeName : defaultTypes)
+    {
+        addType({Engine::Runnable::TypeInfo(typeName, "", {}, {}, {}, true)});
+    }
 }
 size_t Code::CodeBuilder::addType(Engine::Runnable::TypeInfo const &type)
 {
+    if (std::vector<Engine::Runnable::TypeInfo>::const_iterator it = std::find_if(m_types.begin(), m_types.end(), [type](Engine::Runnable::TypeInfo const &t)
+                                                                                  { return t.getName() == type.getName(); });
+        it != m_types.end())
+    {
+        return (size_t)-1;
+    }
     m_types.push_back(type);
     return m_types.size() - 1;
 }
@@ -78,9 +88,14 @@ Code::Debug::FunctionDebugInfo &Code::CodeBuilder::getOrCreateDebugEntryForFunct
     return *it;
 }
 
-void Code::CodeBuilder::addTypeDeclarationLocation(std::string const &name, Debug::DebugInfoSourceData const &data)
+bool Code::CodeBuilder::addTypeDeclarationLocation(std::string const &name, Debug::DebugInfoSourceData const &data)
 {
+    if (m_typeDeclarationLocations.contains(name))
+    {
+        return false;
+    }
     m_typeDeclarationLocations[name] = data;
+    return true;
 }
 
 void Code::CodeBlock::insert(std::vector<uint8_t> const &bytes)

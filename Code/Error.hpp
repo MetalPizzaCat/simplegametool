@@ -5,6 +5,15 @@
 
 namespace Code::Errors
 {
+    class MultipleTypeDefinitionError : public std::exception
+    {
+    public:
+        const char *what() const throw() override;
+        MultipleTypeDefinitionError (std::string const &msg);
+
+    private:
+        std::string m_message;
+    };
     class ParsingError : public std::exception
     {
     public:

@@ -107,7 +107,11 @@ type Baba{
 func init{
     push "baba"
     create_instance Baba
-    set 0 
+    push 8.0
+    call_method_static std::sqrt
+    print
+    get_const std::pi
+    print
 }
 
 func update{

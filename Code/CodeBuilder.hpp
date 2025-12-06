@@ -73,7 +73,11 @@ namespace Code
     class CodeBuilder
     {
     public:
-        explicit CodeBuilder();
+        explicit CodeBuilder(std::vector<std::string> const &defaultTypes = {});
+
+        /// @brief Add new type info
+        /// @param type Type info for user defined type
+        /// @return id of newly added type or -1 if type name was already in use and as such type was not added
         size_t addType(Engine::Runnable::TypeInfo const &type);
 
         std::optional<size_t> getTypeByName(std::string const &name);
@@ -96,7 +100,11 @@ namespace Code
 
         Debug::FunctionDebugInfo &getOrCreateDebugEntryForFunction(size_t typeId, std::string const &functionName);
 
-        void addTypeDeclarationLocation(std::string const &name, Debug::DebugInfoSourceData const &data);
+        /// @brief Attempt to add info about location of type declaration
+        /// @param name Name of the type
+        /// @param data File debug info
+        /// @return  True if added, false if type name is already in use
+        bool addTypeDeclarationLocation(std::string const &name, Debug::DebugInfoSourceData const &data);
 
     private:
         std::vector<CodeBlock> m_blocks;

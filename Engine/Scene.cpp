@@ -2,18 +2,21 @@
 #include "Error.hpp"
 #include "StandardLibrary.hpp"
 
+#include <numbers>
+
 Engine::Scene::Scene(Runnable::RunnableCode const &code) : m_strings(code.strings), m_functions(code.functions), m_debugInfo(code.debugInfo)
 {
     // special type that will be used to represent standard library functions and constants
-    // should always exist as type 0, for sake of simplicity
+    // should always exist as type 0, for sake of simplicity, every other "default" type will be added this way
     addType("std", std::make_unique<ObjectType>(nullptr,
                                                 nullptr,
-                                                std::unordered_map<std::string, Runnable::CodeConstantValue>(),
-                                                std::unordered_map<std::string, Runnable::RunnableFunction>(),
+                                                std::unordered_map<std::string, Runnable::CodeConstantValue>(),                         // fields
+                                                std::unordered_map<std::string, Runnable::CodeConstantValue>{{"pi", std::numbers::pi}}, // constants
+                                                std::unordered_map<std::string, Runnable::RunnableFunction>(),                          // methods
                                                 std::unordered_map<std::string, std::function<void(Scene & scene)>>{{"sqrt", Standard::sqrt}}));
     for (Runnable::TypeInfo const &type : code.types)
     {
-        if (type.getName() == "std")
+        if (type.isDefaultType())
         {
             continue;
         }
@@ -32,7 +35,7 @@ Engine::Scene::Scene(Runnable::RunnableCode const &code) : m_strings(code.string
                 throw Errors::ExecutionError("Type '" + type.getName() + "' uses nonexistant asset '" + type.getSpriteName() + "'");
             }
         }
-        addType(type.getName(), std::make_unique<ObjectType>(asset, type.getFields(), type.getMethods()));
+        addType(type.getName(), std::make_unique<ObjectType>(asset, type.getFields(), type.getConstants(), type.getMethods()));
     }
 }
 
@@ -63,11 +66,11 @@ Engine::StringObject *Engine::Scene::createString(std::string const &str)
     return (Engine::StringObject *)m_memory.back().get();
 }
 
-std::optional<std::string> Engine::Scene::getConstantStringById(size_t id) const
+std::string Engine::Scene::getConstantStringById(size_t id) const
 {
     if (id >= m_strings.size())
     {
-        return {};
+        throw Errors::RuntimeMemoryError("Unable to find string constant with id " + std::to_string(id));
     }
     return m_strings[id];
 }
@@ -221,14 +224,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
             {
                 size_t typeId = parseOperationConstant<int64_t>(func.bytes.begin() + (pos + 1), func.bytes.end());
                 pos += sizeof(size_t);
-                if (std::optional<std::string> str = getConstantStringById(typeId); str.has_value())
-                {
-                    m_operationStack.back().push_back(createString(str.value()));
-                }
-                else
-                {
-                    error(debugInfo, pos, std::string("Unable to find string at id " + std::to_string(typeId)));
-                }
+                m_operationStack.back().push_back(createString(getConstantStringById(typeId)));
             }
             break;
             case Instructions::CreateInstance:
@@ -450,21 +446,15 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 GameObject *obj = popFromStackAsType<GameObject *>("Expected object on stack to call method from");
                 size_t id = parseOperationConstant<size_t>(func.bytes.begin() + pos + 1, func.bytes.end());
                 pos += sizeof(size_t);
-                if (std::optional<std::string> nameStr = getConstantStringById(id); nameStr.has_value())
+                std::string const &name = getConstantStringById(id);
+                if (obj->getType()->isNativeMethod(name))
                 {
-                    if (obj->getType()->isNativeMethod(nameStr.value()))
-                    {
-                        pushToStack(obj);
-                        obj->getType()->callNativeMethod(nameStr.value(), *this);
-                    }
-                    else
-                    {
-                        runMethod(obj, nameStr.value());
-                    }
+                    pushToStack(obj);
+                    obj->getType()->callNativeMethod(name, *this);
                 }
                 else
                 {
-                    error(debugInfo, pos, "Invalid string constant id");
+                    runMethod(obj, name);
                 }
             }
             break;
@@ -478,26 +468,20 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 {
                     error(debugInfo, pos, "Invalid typeid. No type with id '" + std::to_string(typeId) + "' present");
                 }
-                if (std::optional<std::string> nameStr = getConstantStringById(id); nameStr.has_value())
+                std::string const &name = getConstantStringById(id);
+                // yes the way errors are handled is awkward and tbh rather strange but this was the easier way to handle converting byte code to position
+                if (m_types[typeId]->isNativeMethod(name))
                 {
-                    // yes the way errors are handled is awkward and tbh rather strange but this was the easier way to handle converting byte code to position
-                    if (m_types[typeId]->isNativeMethod(nameStr.value()))
-                    {
-                        m_types[typeId]->callNativeMethod(nameStr.value(), *this);
-                    }
-                    else if (m_types[typeId]->hasMethod(nameStr.value()))
-                    {
-                        runFunction(m_types[typeId]->getMethod(nameStr.value()), Runnable::RunnableFunctionDebugInfo(typeId, nameStr.value()));
-                    }
-                    else
-                    {
-
-                        error(debugInfo, pos, "No method with name '" + nameStr.value() + "' in type '" + getTypeNameById(typeId).value() + "'");
-                    }
+                    m_types[typeId]->callNativeMethod(name, *this);
+                }
+                else if (m_types[typeId]->hasMethod(name))
+                {
+                    runFunction(m_types[typeId]->getMethod(name), Runnable::RunnableFunctionDebugInfo(typeId, name));
                 }
                 else
                 {
-                    error(debugInfo, pos, "Invalid string constant id");
+
+                    error(debugInfo, pos, "No method with name '" + name + "' in type '" + getTypeNameById(typeId).value() + "'");
                 }
             }
             break;
@@ -506,14 +490,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
             {
                 size_t id = parseOperationConstant<size_t>(func.bytes.begin() + (pos + 1), func.bytes.end());
                 pos += sizeof(size_t);
-                if (std::optional<std::string> nameStr = getConstantStringById(id); nameStr.has_value())
-                {
-                    runFunctionByName(nameStr.value());
-                }
-                else
-                {
-                    error(debugInfo, pos, "Invalid string constant id");
-                }
+                runFunctionByName(getConstantStringById(id));
             }
             break;
             // Exit function without returning a value
@@ -554,6 +531,26 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
             {
                 std::string const &fieldName = popFromStackAsType<StringObject *>("Expected field name on stack")->getString();
                 pushToStack(popFromStackAsType<GameObject *>("Expected game object on stack")->hasField(fieldName));
+            }
+            break;
+            case Instructions::GetConst:
+            {
+                size_t typeId = parseOperationConstant<size_t>(func.bytes.begin() + (pos + 1), func.bytes.end());
+                pos += sizeof(size_t);
+                size_t id = parseOperationConstant<size_t>(func.bytes.begin() + pos + 1, func.bytes.end());
+                pos += sizeof(size_t);
+                if (typeId >= m_types.size())
+                {
+                    error(debugInfo, pos, "Invalid typeid. No type with id '" + std::to_string(typeId) + "' present");
+                }
+                if (std::optional<Value> v = m_types[typeId]->getConstant(getConstantStringById(id), *this); v.has_value())
+                {
+                    pushToStack(v.value());
+                }
+                else
+                {
+                    error(debugInfo, pos, "No constant with name '" + getConstantStringById(id) + "' in type '" + getTypeNameById(typeId).value() + "'");
+                }
             }
             break;
             default:
