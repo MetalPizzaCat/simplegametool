@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10.0)
-project(simplegametool VERSION 0.1.0 LANGUAGES C CXX)
+project(simplegametool VERSION 0.2.0 LANGUAGES C CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
@@ -12,7 +12,12 @@ FetchContent_Declare(SFML
     GIT_SHALLOW ON
     EXCLUDE_FROM_ALL
     SYSTEM)
+
 FetchContent_MakeAvailable(SFML)
+
+
+FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz)
+FetchContent_MakeAvailable(json)
 
 add_executable(simplegametool main.cpp
     Code/Code.hpp
@@ -51,9 +56,13 @@ add_executable(simplegametool main.cpp
     Engine/AnimatedSprite.cpp
     Engine/StandardLibrary.hpp
     Engine/StandardLibrary.cpp
+    Project/Project.hpp
+    Project/Project.cpp
+    Project/Errors.hpp
+    Project/Errors.cpp
 )
 
-target_link_libraries(simplegametool PRIVATE SFML::Graphics SFML::Audio)
+target_link_libraries(simplegametool PRIVATE SFML::Graphics SFML::Audio nlohmann_json::nlohmann_json)
 
 
 target_compile_definitions(simplegametool PUBLIC ASSETS_PATH="${CMAKE_CURRENT_SOURCE_DIR}/assets/")

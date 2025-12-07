@@ -1,0 +1,106 @@
+type Baba{
+    sprite = @img1
+    direction = 1.0
+
+    func on_animation_ended (self) {
+        vars a, b, d
+        push "first"
+        push "second"
+        call_method_static Self::thing
+
+        get $self    
+        push "direction"
+        get_field 
+        print
+        push "wow aniamtion over!"    
+        print
+
+        get $self
+        call_method do_thing
+    }
+
+    func do_thing(self){
+        push "indeed doing a thing!"    
+        print 
+    }
+
+    func thing(a, b) {
+        get $a
+        print 
+        get $b
+        print
+    }
+}
+
+func init{
+    push "baba"
+    create_instance Baba
+    push "baba_mouse"
+    create_instance Baba
+    push 8.0
+    call_method_static std::sqrt
+    print
+    get_const std::pi
+    print
+}
+
+func on_key_down(key){
+    push "you pressed a key!"
+    print
+    get $key
+    print
+}
+
+func on_mouse_move(pos){
+    push "baba_mouse"
+    get_instance
+    get $pos
+    set_pos
+}
+
+func update{
+    vars baba 
+    # baba = get_object("baba")
+    push "baba"
+    get_instance
+    set $baba
+
+    get $baba
+
+    get $baba
+    get_pos
+
+    get $baba
+    get_pos
+    get_x
+    push 128.0
+    less 
+    jump_if %back
+        get $baba
+        push -1.0
+        push "direction"
+        set_field
+        jump %move
+    %back:
+        get $baba
+        get_pos
+        get_x
+        push 0.0
+        more
+        jump_if %move
+        get $baba
+        push 1.0
+        push "direction"
+        set_field
+    %move:
+
+    push 0.0
+    get $baba
+    push "direction"
+    get_field
+    
+    make_vector
+    add
+    
+    set_pos
+}
