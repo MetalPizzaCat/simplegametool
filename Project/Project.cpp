@@ -54,7 +54,11 @@ void Project::Project::loadAsset(std::string const &path) const
     {
         if (fileData.at("type").get<std::string>() == "animation")
         {
-            Engine::ContentManager::getInstance().addAsset(fileData.at("name"), loadSpriteFramesAsset(fileData));
+            Engine::ContentManager::getInstance().addSpriteAsset(fileData.at("name"), loadSpriteFramesAsset(fileData));
+        }
+        else if (fileData.at("type").get<std::string>() == "sound")
+        {
+            Engine::ContentManager::getInstance().addSoundAsset(fileData.at("name"), loadSoundAsset(fileData));
         }
     }
     catch (nlohmann::json::exception e)
@@ -97,4 +101,14 @@ std::unique_ptr<Engine::SpriteFramesAsset> Project::Project::loadSpriteFramesAss
                                                        sf::IntRect(
                                                            sf::Vector2i(json.at("default_rect").at("x"), json.at("default_rect").at("y")),
                                                            sf::Vector2i(json.at("default_rect").at("w"), json.at("default_rect").at("h"))));
+}
+
+std::unique_ptr<Engine::SoundAsset> Project::Project::loadSoundAsset(nlohmann::json const &json) const
+{
+    return std::make_unique<Engine::SoundAsset>(
+        m_rootFolder + "/" + json.at("file_path").get<std::string>(),
+        json.at("pitch").get<float>(),
+        json.at("default_volume").get<int>(),
+        json.at("looping").get<bool>(),
+        json.at("positional").get<bool>());
 }

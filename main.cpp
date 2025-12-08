@@ -62,9 +62,10 @@ int main(int, char **)
         Project::Project p("./testproject");
         p.loadAssetInfoIntoContentManager();
         std::string code = p.loadSceneCode(p.getMainScenePath());
-        Scene scene = loadSceneFromString(code);
+
         try
         {
+            Scene scene = loadSceneFromString(code);
             auto window = sf::RenderWindow(sf::VideoMode({(34 * 24u), (25 * 24u)}), p.getName());
             sf::Clock deltaClock;
             window.setFramerateLimit(144);

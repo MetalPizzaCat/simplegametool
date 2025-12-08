@@ -53,5 +53,7 @@ namespace Engine
         SetField,
         HasField,
         GetConst,
+        CreateSoundPlayer,
+        PlaySound,
     };
 }

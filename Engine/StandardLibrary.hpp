@@ -14,4 +14,9 @@ namespace Engine::Standard
         void getMousePosition(Scene &scene);
 
     }
+
+    namespace Audio
+    {
+        void audioPlayerPlay(Scene &scene);
+    }
 } // namespace Engine::Standard

@@ -13,7 +13,7 @@ namespace Engine
         explicit GameObject(ObjectType const *type, std::string const &name, Scene &state);
         void draw(sf::RenderWindow &window);
 
-        void setPosition(sf::Vector2f pos);
+        virtual void setPosition(sf::Vector2f pos);
         sf::Vector2f getPosition() const { return m_position; }
 
         virtual void update(float delta);

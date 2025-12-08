@@ -1,0 +1,9 @@
+{
+    "name": "beep1",
+    "type": "sound",
+    "file_path": "sounds/hit2.ogg",
+    "pitch": 1.0,
+    "default_volume": 100,
+    "positional": false,
+    "looping": false
+}

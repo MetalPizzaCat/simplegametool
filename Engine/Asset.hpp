@@ -22,7 +22,14 @@ namespace Engine
     class SoundAsset : public Asset
     {
     public:
-        
+        explicit SoundAsset(std::string const &path, float pitch, float defaultVolume, bool looping, bool positional);
+
+        float getPitch() const { return m_pitch; }
+        float getDefaultVolume() const { return m_defaultVolume; }
+
+        bool isLooping() const { return m_looping; }
+        bool isPositional() const { return m_positional; }
+
     private:
         float m_pitch;
         float m_defaultVolume;

@@ -43,6 +43,8 @@ namespace Code
         GetConst,
         // won't actually work as instruction, as no byte code will be generated, however it is easier to include it into this system
         Vars,
+        CreateSoundPlayer,
+        PlaySound,
     };
 
     enum class Keyword
@@ -106,7 +108,9 @@ namespace Code
         {"get_field", FusionInstruction::GetField},
         {"set_field", FusionInstruction::SetField},
         {"vars", FusionInstruction::Vars},
-        {"get_const", FusionInstruction::GetConst}};
+        {"get_const", FusionInstruction::GetConst},
+        {"create_sound_player", FusionInstruction::CreateSoundPlayer},
+        {"play_sound", FusionInstruction::PlaySound}};
 
     static const std::map<char, Separator> Separators = {
         {':', Separator::Colon},
@@ -182,5 +186,7 @@ namespace Code
         {FusionInstruction::SetField, FusionInstructionData{.instruction = Engine::Instructions::SetField, .argumentTypes = {}}},
         {FusionInstruction::GetConst, FusionInstructionData{.instruction = Engine::Instructions::GetConst, .argumentTypes = {InstructionArgumentType::MethodName}}},
         {FusionInstruction::HasField, FusionInstructionData{.instruction = Engine::Instructions::HasField, .argumentTypes = {}}},
+        {FusionInstruction::CreateSoundPlayer, FusionInstructionData{.instruction = Engine::Instructions::CreateSoundPlayer, .argumentTypes = {}}},
+        {FusionInstruction::PlaySound, FusionInstructionData{.instruction = Engine::Instructions::PlaySound, .argumentTypes = {}}},
     };
 }

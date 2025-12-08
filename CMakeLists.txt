@@ -56,6 +56,10 @@ add_executable(simplegametool main.cpp
     Engine/AnimatedSprite.cpp
     Engine/StandardLibrary.hpp
     Engine/StandardLibrary.cpp
+    Engine/AudioObject.hpp
+    Engine/AudioObject.cpp
+    Engine/Sound.hpp
+    Engine/Sound.cpp
     Project/Project.hpp
     Project/Project.cpp
     Project/Errors.hpp

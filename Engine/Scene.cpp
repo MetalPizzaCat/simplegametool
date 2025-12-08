@@ -1,6 +1,7 @@
 #include "Scene.hpp"
 #include "Error.hpp"
 #include "StandardLibrary.hpp"
+#include "AudioObject.hpp"
 #include "Input.hpp"
 
 #include <numbers>
@@ -35,13 +36,20 @@ Engine::Scene::Scene(Runnable::RunnableCode const &code) : m_strings(code.string
                                                         Input::MouseButtons,                                            // constants
                                                         std::unordered_map<std::string, Runnable::RunnableFunction>(),  // methods
                                                         std::unordered_map<std::string, std::function<void(Scene & scene)>>()));
+
+    addType("AudioPlayer", std::make_unique<ObjectType>(nullptr,
+                                                        nullptr,
+                                                        std::unordered_map<std::string, Runnable::CodeConstantValue>(), // fields
+                                                        std::unordered_map<std::string, Runnable::CodeConstantValue>(), // constants
+                                                        std::unordered_map<std::string, Runnable::RunnableFunction>(),  // methods
+                                                        std::unordered_map<std::string, std::function<void(Scene & scene)>>{{"play", Standard::Audio::audioPlayerPlay}}));
     for (Runnable::TypeInfo const &type : code.types)
     {
         if (type.isDefaultType())
         {
             continue;
         }
-        SpriteFramesAsset const *asset = ContentManager::getInstance().getAsset(type.getSpriteName());
+        SpriteFramesAsset const *asset = ContentManager::getInstance().getAnimationAsset(type.getSpriteName());
         if (asset == nullptr)
         {
             if (code.typeDeclarationLocations.contains(type.getName()))
@@ -518,9 +526,13 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                     pushToStack(obj);
                     obj->getType()->callNativeMethod(name, *this);
                 }
-                else
+                else if (obj->getType()->hasMethod(name))
                 {
                     runMethod(obj, name);
+                }
+                else
+                {
+                    error(debugInfo, pos, "No method with name '" + name + "' in type '" + getTypeNameById(getIdForType(obj->getType()).value()).value() + "'");
                 }
             }
             break;
@@ -617,6 +629,20 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 {
                     error(debugInfo, pos, "No constant with name '" + getConstantStringById(id) + "' in type '" + getTypeNameById(typeId).value() + "'");
                 }
+            }
+            break;
+
+            case Instructions::CreateSoundPlayer:
+            {
+                std::string const& assetName = popFromStackAsType<StringObject *>("Expected audio asset name")->getString();
+                m_objects.push_back(std::make_unique<AudioObject>(m_types[m_typeNames["AudioPlayer"]].get(),
+                                                                  assetName,
+                                                                  popFromStackAsType<StringObject *>("Expected object name")->getString(), *this));
+                pushToStack(m_objects.back().get());
+            }
+            break;
+            case Instructions::PlaySound:
+            {
             }
             break;
             default:
