@@ -57,6 +57,12 @@ void Engine::GameObject::setPosition(sf::Vector2f pos)
     }
 }
 
+void Engine::GameObject::setSize(sf::Vector2f size)
+{
+    m_size = size;
+    m_sprite->setSize(size);
+}
+
 void Engine::GameObject::update(float delta)
 {
     if (m_sprite != nullptr)

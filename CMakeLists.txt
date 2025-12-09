@@ -31,6 +31,7 @@ add_executable(simplegametool main.cpp
     Code/CodeGenerator.hpp
     Code/CodeGenerator.cpp
     Code/Lexems.hpp
+    Code/Lexems.cpp
     Code/Error.hpp
     Code/Error.cpp
     Code/DebugInfo.hpp

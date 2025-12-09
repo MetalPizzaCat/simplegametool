@@ -4,6 +4,7 @@
 #include "Error.hpp"
 Code::CodeBuilder::CodeBuilder(std::vector<std::string> const &defaultTypes)
 {
+
     for (std::string const &typeName : defaultTypes)
     {
         addType({Engine::Runnable::TypeInfo(typeName, "", {}, {}, {}, true)});
@@ -19,6 +20,11 @@ size_t Code::CodeBuilder::addType(Engine::Runnable::TypeInfo const &type)
     }
     m_types.push_back(type);
     return m_types.size() - 1;
+}
+
+size_t Code::CodeBuilder::getNextTypeId() const
+{
+    return m_types.size();
 }
 
 std::optional<size_t> Code::CodeBuilder::getTypeByName(std::string const &name)

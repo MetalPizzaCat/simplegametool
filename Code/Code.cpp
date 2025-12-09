@@ -9,7 +9,7 @@ Engine::Runnable::RunnableCode Code::Fusion::compileFusionString(std::string con
     //     std::cout << t->toString() << " ";
     // }
     // std::cout << std::endl;
-    FusionCodeGenerator generator(std::move(tokens), {"std", "Input", "Scancode", "MouseButton", "AudioPlayer"});
+    FusionCodeGenerator generator(std::move(tokens), {"std", "Input", "Scancode", "MouseButton", "AudioPlayer", "Audio"});
     generator.generate();
 
     return generator.getBuilder().getRunnableCode();

@@ -13,8 +13,8 @@ namespace Engine
         virtual ~MemoryObject() {}
 
     private:
-        bool m_dead;
-        int32_t m_refCount;
+        bool m_dead = false;
+        int32_t m_refCount = 0;
     };
 
     class StringObject : public MemoryObject

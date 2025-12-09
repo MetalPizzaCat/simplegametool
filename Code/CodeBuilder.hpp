@@ -80,6 +80,10 @@ namespace Code
         /// @return id of newly added type or -1 if type name was already in use and as such type was not added
         size_t addType(Engine::Runnable::TypeInfo const &type);
 
+        /// @brief Get id that will be used for the next declared type
+        /// @return Id of the next type
+        size_t getNextTypeId() const;
+
         std::optional<size_t> getTypeByName(std::string const &name);
 
         /// @brief Attempt to get id for a string that contains given value, if string is not registered it gets added.

@@ -20,7 +20,7 @@ namespace Code
         GetPosition,
         SetPosition,
         GetPositionX,
-        SetPositionX,
+        GetPositionY,
         MakeVector,
         Push,
         Jump,
@@ -28,6 +28,7 @@ namespace Code
         Print,
         Equals,
         NotEquals,
+        Not,
         More,
         Less,
         MoreOrEquals,
@@ -45,6 +46,9 @@ namespace Code
         Vars,
         CreateSoundPlayer,
         PlaySound,
+        GetSize,
+        SetSize,
+        AreOverlapping,
     };
 
     enum class Keyword
@@ -70,7 +74,6 @@ namespace Code
 
     static const std::unordered_map<std::string, Keyword> Keywords = {
         {"func", Keyword::Function},
-        {"end", Keyword::End},
         {"type", Keyword::Type},
         {"of", Keyword::Of},
         {"const", Keyword::Const}};
@@ -89,13 +92,14 @@ namespace Code
         {"get_pos", FusionInstruction::GetPosition},
         {"set_pos", FusionInstruction::SetPosition},
         {"get_x", FusionInstruction::GetPositionX},
-        {"get_y", FusionInstruction::SetPositionX},
+        {"get_y", FusionInstruction::GetPositionY},
         {"make_vector", FusionInstruction::MakeVector},
         {"jump", FusionInstruction::Jump},
         {"jump_if", FusionInstruction::JumpIf},
         {"print", FusionInstruction::Print},
         {"eq", FusionInstruction::Equals},
         {"neq", FusionInstruction::NotEquals},
+        {"not", FusionInstruction::Not},
         {"less", FusionInstruction::Less},
         {"more", FusionInstruction::More},
         {"more_eq", FusionInstruction::MoreOrEquals},
@@ -110,7 +114,14 @@ namespace Code
         {"vars", FusionInstruction::Vars},
         {"get_const", FusionInstruction::GetConst},
         {"create_sound_player", FusionInstruction::CreateSoundPlayer},
-        {"play_sound", FusionInstruction::PlaySound}};
+        {"play_sound", FusionInstruction::PlaySound},
+        {"get_size", FusionInstruction::GetSize},
+        {"set_size", FusionInstruction::SetSize},
+        {"are_overlapping", FusionInstruction::AreOverlapping},
+        {"end", FusionInstruction::End},
+    };
+
+    std::string getFusionInstructionText(FusionInstruction instruction);
 
     static const std::map<char, Separator> Separators = {
         {':', Separator::Colon},
@@ -168,6 +179,7 @@ namespace Code
         {FusionInstruction::GetPosition, FusionInstructionData{.instruction = Engine::Instructions::GetPosition, .argumentTypes = {}}},
         {FusionInstruction::SetPosition, FusionInstructionData{.instruction = Engine::Instructions::SetPosition, .argumentTypes = {}}},
         {FusionInstruction::GetPositionX, FusionInstructionData{.instruction = Engine::Instructions::GetVectorX, .argumentTypes = {}}},
+        {FusionInstruction::GetPositionY, FusionInstructionData{.instruction = Engine::Instructions::GetVectorY, .argumentTypes = {}}},
         {FusionInstruction::MakeVector, FusionInstructionData{.instruction = Engine::Instructions::MakeVector, .argumentTypes = {}}},
         {FusionInstruction::Print, FusionInstructionData{.instruction = Engine::Instructions::Print, .argumentTypes = {}}},
         {FusionInstruction::Equals, FusionInstructionData{.instruction = Engine::Instructions::Equals, .argumentTypes = {}}},
@@ -182,11 +194,15 @@ namespace Code
         {FusionInstruction::CallMethod, FusionInstructionData{.instruction = Engine::Instructions::CallMethod, .argumentTypes = {InstructionArgumentType::FunctionName}}},
         {FusionInstruction::CallMethodStatic, FusionInstructionData{.instruction = Engine::Instructions::CallMethodStatic, .argumentTypes = {InstructionArgumentType::MethodName}}},
         {FusionInstruction::Return, FusionInstructionData{.instruction = Engine::Instructions::Return, .argumentTypes = {}}},
-        {FusionInstruction::GetField, FusionInstructionData{.instruction = Engine::Instructions::GetField, .argumentTypes = {}}},
-        {FusionInstruction::SetField, FusionInstructionData{.instruction = Engine::Instructions::SetField, .argumentTypes = {}}},
+        {FusionInstruction::GetField, FusionInstructionData{.instruction = Engine::Instructions::GetField, .argumentTypes = {InstructionArgumentType::FunctionName}}},
+        {FusionInstruction::SetField, FusionInstructionData{.instruction = Engine::Instructions::SetField, .argumentTypes = {InstructionArgumentType::FunctionName}}},
         {FusionInstruction::GetConst, FusionInstructionData{.instruction = Engine::Instructions::GetConst, .argumentTypes = {InstructionArgumentType::MethodName}}},
         {FusionInstruction::HasField, FusionInstructionData{.instruction = Engine::Instructions::HasField, .argumentTypes = {}}},
         {FusionInstruction::CreateSoundPlayer, FusionInstructionData{.instruction = Engine::Instructions::CreateSoundPlayer, .argumentTypes = {}}},
         {FusionInstruction::PlaySound, FusionInstructionData{.instruction = Engine::Instructions::PlaySound, .argumentTypes = {}}},
+        {FusionInstruction::GetSize, FusionInstructionData{.instruction = Engine::Instructions::GetSize, .argumentTypes = {}}},
+        {FusionInstruction::SetSize, FusionInstructionData{.instruction = Engine::Instructions::SetSize, .argumentTypes = {}}},
+        {FusionInstruction::AreOverlapping, FusionInstructionData{.instruction = Engine::Instructions::AreOverlapping, .argumentTypes = {}}},
+        {FusionInstruction::Not, FusionInstructionData{.instruction = Engine::Instructions::Not, .argumentTypes = {}}},
     };
 }

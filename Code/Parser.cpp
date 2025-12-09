@@ -307,7 +307,11 @@ std::unique_ptr<Code::IntToken> Code::Parser::parseInt()
     }
     std::string num;
     size_t offset = 0;
-    bool hasSeparator = false;
+    if (getCurrent().value() == '-')
+    {
+        num = '-';
+        offset++;
+    }
     for (; getFromCurrentWithOffset(offset).has_value() && (std::isdigit(getFromCurrentWithOffset(offset).value())); offset++)
     {
         num.push_back(getFromCurrentWithOffset(offset).value());

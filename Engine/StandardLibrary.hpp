@@ -18,5 +18,7 @@ namespace Engine::Standard
     namespace Audio
     {
         void audioPlayerPlay(Scene &scene);
+
+        void setListenerPosition(Scene &scene);
     }
 } // namespace Engine::Standard

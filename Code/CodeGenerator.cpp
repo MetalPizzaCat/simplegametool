@@ -94,7 +94,7 @@ void Code::Fusion::FusionCodeGenerator::parseTypeDeclaration()
     // parse methods
     while (isKeyword(Keyword::Function))
     {
-        auto method = parseFunctionDeclaration();
+        auto method = parseFunctionDeclaration(m_builder.getNextTypeId());
         methods[method.first] = method.second;
         consumeEndOfStatement();
     }
@@ -260,7 +260,7 @@ void Code::Fusion::FusionCodeGenerator::parseInstruction(FusionInstruction instr
 {
     if (!FusionInstructionsData.contains(instruction))
     {
-        error("Unsupported instruction");
+        error("Unsupported instruction '" + getFusionInstructionText(instruction) + "'");
         return;
     }
     FusionInstructionData const *data = &FusionInstructionsData.at(instruction);

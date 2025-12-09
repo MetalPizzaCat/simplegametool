@@ -14,7 +14,12 @@ namespace Engine
         void draw(sf::RenderWindow &window);
 
         virtual void setPosition(sf::Vector2f pos);
+
         sf::Vector2f getPosition() const { return m_position; }
+
+        void setSize(sf::Vector2f size);
+
+        sf::Vector2f getSize() const { return m_size; }
 
         virtual void update(float delta);
 
@@ -31,7 +36,7 @@ namespace Engine
         bool hasAnimationJustFinished() const { return m_hasAnimationJustFinished; }
 
         void setAnimationJustFinished(bool has) { m_hasAnimationJustFinished = has; }
-        
+
         virtual ~GameObject() = default;
 
     protected:
@@ -42,6 +47,7 @@ namespace Engine
         std::unique_ptr<AnimatedSprite> m_sprite;
         ObjectType const *m_type;
         sf::Vector2f m_position;
+        sf::Vector2f m_size;
         bool m_visible;
         std::unordered_map<std::string, Value> m_fields;
         bool m_hasAnimationJustFinished = false;

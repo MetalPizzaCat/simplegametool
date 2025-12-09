@@ -65,8 +65,10 @@ int main(int, char **)
 
         try
         {
+
             Scene scene = loadSceneFromString(code);
-            auto window = sf::RenderWindow(sf::VideoMode({(34 * 24u), (25 * 24u)}), p.getName());
+            auto window = sf::RenderWindow(sf::VideoMode(p.getWindowSize()), p.getName());
+
             sf::Clock deltaClock;
             window.setFramerateLimit(144);
             scene.runFunctionByName("init");

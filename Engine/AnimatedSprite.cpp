@@ -43,7 +43,7 @@ void Engine::AnimatedSprite::update(float delta)
                 return;
             }
         }
-
+        m_sprite.setScale(sf::Vector2f(m_size.x / getCurrentFrameSize().size.x, m_size.y / getCurrentFrameSize().size.y));
         m_sprite.setTextureRect(frames.frames[m_currentAnimationFrame]);
     }
 }
@@ -51,4 +51,19 @@ void Engine::AnimatedSprite::update(float delta)
 void Engine::AnimatedSprite::setPosition(sf::Vector2f pos)
 {
     m_sprite.setPosition(pos);
+}
+
+void Engine::AnimatedSprite::setSize(sf::Vector2f size)
+{
+    m_size = size;
+    m_sprite.setScale(sf::Vector2f(size.x / getCurrentFrameSize().size.x, size.y / getCurrentFrameSize().size.y ));
+}
+
+sf::IntRect Engine::AnimatedSprite::getCurrentFrameSize() const
+{
+    if (m_frames->hasAnimation(m_currentAnimationName))
+    {
+        return m_frames->getFrames(m_currentAnimationName).frames.at(m_currentAnimationFrame);
+    }
+    return m_frames->getDefaultFrame();
 }

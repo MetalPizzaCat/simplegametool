@@ -2,5 +2,9 @@
     "project_file_version": 1,
     "project_name": "example",
     "asset_folder": "assets/",
-    "start_scene": "scenes/main.scn"
+    "start_scene": "scenes/main.scn",
+    "window_size": {
+        "w": 640,
+        "h": 480
+    }
 }

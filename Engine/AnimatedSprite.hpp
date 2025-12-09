@@ -10,12 +10,22 @@ namespace Engine
     public:
         explicit AnimatedSprite(sf::Sprite sprite, SpriteFramesAsset const *frames);
 
-        virtual void draw(sf::RenderWindow &window);
+        void draw(sf::RenderWindow &window);
 
-        virtual void update(float delta);
+        /// @brief Update animation of the sprite
+        /// @param delta Time since last frame
+        void update(float delta);
 
         void setPosition(sf::Vector2f pos);
 
+        /// @brief Set desired size of the sprite, scale will be adjusted based on frame size
+        /// @param size Desired size
+        void setSize(sf::Vector2f size);
+
+        sf::IntRect getCurrentFrameSize() const;
+
+        /// @brief Set function to call upon finishing the animation
+        /// @param f Function
         void setAnimationFinishedCallback(std::function<void()> const &f) { m_animationFinishedCallback = std::move(f); }
 
     private:
@@ -26,5 +36,6 @@ namespace Engine
         std::string m_currentAnimationName;
         size_t m_currentAnimationFrame;
         bool m_finishedAnimation;
+        sf::Vector2f m_size;
     };
 } // namespace Engine

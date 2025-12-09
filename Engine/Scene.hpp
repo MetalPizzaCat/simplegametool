@@ -37,7 +37,7 @@ namespace Engine
         /// @brief Call handlers for given event in scene and object scripts if handlers are present
         /// @param eventName Name of the event function(e.g. on_key_down, on_mouse_move)
         /// @param arguments Arguments to pass to functions
-        void callSceneAndObjectScriptFunctionHandlers(std::string const& eventName, std::vector<Value> const& arguments);
+        void callSceneAndObjectScriptFunctionHandlers(std::string const &eventName, std::vector<Value> const &arguments);
 
         /// @brief Call handlers for key down even in scene and object scripts
         /// @param scancode Key scancode
@@ -71,6 +71,17 @@ namespace Engine
             {
                 runFunction(instance->getType()->getMethod(methodName), {});
             }
+        }
+
+        /// @brief Simple helper function that wraps the parsing and resolution process. If string is not found an error is thrown
+        /// @param pos Position in the bytecode of the function
+        /// @param byteCode Bytecode of the function
+        /// @return Reference to the string in constant pool
+        inline std::string const &parseByteOperandToString(size_t &pos, std::vector<uint8_t> const &byteCode)
+        {
+            size_t id = parseOperationConstant<size_t>(byteCode.begin() + pos + 1, byteCode.end());
+            pos += sizeof(size_t);
+            return getConstantStringById(id);
         }
 
         void addType(std::string const &name, std::unique_ptr<ObjectType> type)
@@ -114,7 +125,7 @@ namespace Engine
         /// @brief Attempt to get string constant by id and throw memory error if no string uses given id
         /// @param id Id of the string constant
         /// @return String value
-        std::string getConstantStringById(size_t id) const;
+        std::string const &getConstantStringById(size_t id) const;
 
         std::optional<std::string> getTypeNameById(size_t id) const;
 
@@ -161,7 +172,7 @@ namespace Engine
 
         /// @brief Push list of values onto the current stack or throw and error if no stack exists
         /// @param values Values to push
-        void appendArrayToStack(std::vector<Value> const& values);
+        void appendArrayToStack(std::vector<Value> const &values);
 
         std::optional<size_t> getIdForType(ObjectType const *type) const;
 

@@ -20,3 +20,9 @@ void Engine::Standard::Audio::audioPlayerPlay(Scene &scene)
         audio->play();
     }
 }
+
+void Engine::Standard::Audio::setListenerPosition(Scene &scene)
+{
+    sf::Vector2f pos = scene.popFromStackAsType<sf::Vector2f>("Expected position on stack");
+    sf::Listener::setPosition(sf::Vector3f(pos.x, pos.y, 0));
+}

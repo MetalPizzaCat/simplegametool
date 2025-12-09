@@ -43,8 +43,8 @@ std::string Code::InstructionToken::toString() const
         return "OP(SetPosition)";
     case FusionInstruction::GetPositionX:
         return "OP(GetPositionX)";
-    case FusionInstruction::SetPositionX:
-        return "OP(SetPositionX)";
+    case FusionInstruction::GetPositionY:
+        return "OP(GetPositionY)";
     case FusionInstruction::MakeVector:
         return "OP(MakeVector)";
     case FusionInstruction::Push:

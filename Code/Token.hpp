@@ -14,6 +14,8 @@ namespace Code
         size_t getRow() const { return m_row; }
         size_t getColumn() const { return m_column; }
 
+        virtual ~Token() {}
+
     private:
         size_t m_row;
         size_t m_column;

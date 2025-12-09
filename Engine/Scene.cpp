@@ -42,7 +42,16 @@ Engine::Scene::Scene(Runnable::RunnableCode const &code) : m_strings(code.string
                                                         std::unordered_map<std::string, Runnable::CodeConstantValue>(), // fields
                                                         std::unordered_map<std::string, Runnable::CodeConstantValue>(), // constants
                                                         std::unordered_map<std::string, Runnable::RunnableFunction>(),  // methods
-                                                        std::unordered_map<std::string, std::function<void(Scene & scene)>>{{"play", Standard::Audio::audioPlayerPlay}}));
+                                                        std::unordered_map<std::string, std::function<void(Scene & scene)>>{
+                                                            {"play", Standard::Audio::audioPlayerPlay}}));
+
+    addType("Audio", std::make_unique<ObjectType>(nullptr,
+                                                  nullptr,
+                                                  std::unordered_map<std::string, Runnable::CodeConstantValue>(), // fields
+                                                  std::unordered_map<std::string, Runnable::CodeConstantValue>(), // constants
+                                                  std::unordered_map<std::string, Runnable::RunnableFunction>(),  // methods
+                                                  std::unordered_map<std::string, std::function<void(Scene & scene)>>{
+                                                      {"set_listener_position", Standard::Audio::audioPlayerPlay}}));
     for (Runnable::TypeInfo const &type : code.types)
     {
         if (type.isDefaultType())
@@ -80,7 +89,10 @@ void Engine::Scene::update(float delta)
         if (obj->hasAnimationJustFinished())
         {
             obj->setAnimationJustFinished(false);
-            runMethod(obj.get(), "on_animation_ended");
+            if (obj->getType()->hasMethod("on_animation_ended"))
+            {
+                runMethod(obj.get(), "on_animation_ended");
+            }
         }
     }
     if (hasFunction("update"))
@@ -101,11 +113,6 @@ void Engine::Scene::callSceneAndObjectScriptFunctionHandlers(std::string const &
     for (auto const &obj : m_objects)
     {
         if (obj->getType()->hasMethod(eventName))
-        {
-            appendArrayToStack(arguments);
-            runMethod(obj.get(), eventName);
-        }
-        if (obj->hasAnimationJustFinished())
         {
             appendArrayToStack(arguments);
             runMethod(obj.get(), eventName);
@@ -132,7 +139,7 @@ Engine::StringObject *Engine::Scene::createString(std::string const &str)
     return (Engine::StringObject *)m_memory.back().get();
 }
 
-std::string Engine::Scene::getConstantStringById(size_t id) const
+std::string const &Engine::Scene::getConstantStringById(size_t id) const
 {
     if (id >= m_strings.size())
     {
@@ -283,7 +290,8 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
     try
     {
         m_operationStack.push_back({});
-        while (pos < func.bytes.size())
+        bool returning = false;
+        while (pos < func.bytes.size() && !returning)
         {
 
             // before you lies a giant switch case
@@ -309,6 +317,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 m_objects.push_back(std::make_unique<GameObject>(m_types[typeId].get(), name, *this));
                 if (m_objects.back()->getType()->hasMethod("init"))
                 {
+                    pushToStack(m_objects.back().get());
                     runFunction(m_objects.back()->getType()->getMethod("init"), Runnable::RunnableFunctionDebugInfo(typeId, "init"));
                 }
 
@@ -351,12 +360,11 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
             {
                 size_t id = parseOperationConstant<size_t>(func.bytes.begin() + (pos + 1), func.bytes.end());
                 pos += sizeof(size_t);
-                if (id >= m_variables.size())
+                if (id >= m_variables.back().size())
                 {
-                    m_variables.resize(id + 1);
+                    m_variables.back().resize(id + 1);
                 }
-                setVariableValue(id, m_operationStack.back().back());
-                m_operationStack.back().pop_back();
+                setVariableValue(id, popFromStackOrError());
             }
             break;
             case Instructions::GetLocal:
@@ -396,7 +404,28 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
             }
             break;
             case Instructions::Sub:
-                break;
+            {
+                Value b = popFromStackOrError();
+                Value a = popFromStackOrError();
+
+                if (a.index() != b.index())
+                {
+                    error(debugInfo, pos, std::string("Attempted to perform arithmetic on incompatible types: ") + typeToString((ValueType)a.index()) + " and " + typeToString((ValueType)b.index()));
+                }
+                if (a.index() == ValueType::Vector)
+                {
+                    pushToStack(std::get<sf::Vector2f>(a) - std::get<sf::Vector2f>(b));
+                }
+                else if (a.index() == ValueType::Int)
+                {
+                    pushToStack(std::get<int64_t>(a) - std::get<int64_t>(b));
+                }
+                else if (a.index() == ValueType::Float)
+                {
+                    pushToStack(std::get<double>(a) - std::get<double>(b));
+                }
+            }
+            break;
             case Instructions::Div:
                 break;
             case Instructions::Mul:
@@ -405,13 +434,17 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 break;
             case Instructions::Or:
                 break;
-                break;
+            case Instructions::Not:
+            {
+                pushToStack(!popFromStackAsType<bool>("Expected boolean value on stack"));
+            }
+            break;
             case Instructions::SetPosition:
             {
-                sf::Vector2f pos = popFromStackAsType<sf::Vector2f>("Expected vector for position on stack");
+                sf::Vector2f objPos = popFromStackAsType<sf::Vector2f>("Expected vector for position on stack");
                 GameObject *obj = popFromStackAsType<GameObject *>("Expected object to assign position for on stack");
 
-                obj->setPosition(pos);
+                obj->setPosition(objPos);
             }
             break;
             case Instructions::GetPosition:
@@ -423,8 +456,9 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
             break;
             case Instructions::MakeVector:
             {
-                Value x = popFromStackAsType<double>("Expected float on stack for x");
                 Value y = popFromStackAsType<double>("Expected float on stack for y");
+                Value x = popFromStackAsType<double>("Expected float on stack for x");
+                
                 pushToStack(sf::Vector2f(std::get<double>(x), std::get<double>(y)));
             }
             break;
@@ -459,9 +493,67 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
             }
             break;
             case Instructions::Equals:
-                break;
+            {
+                Value a = popFromStackOrError();
+                Value b = popFromStackOrError();
+                if (a.index() != b.index())
+                {
+                    pushToStack(false);
+                }
+                switch (a.index())
+                {
+                case ValueType::Bool:
+                    pushToStack(std::get<bool>(a) == std::get<bool>(b));
+                    break;
+                case ValueType::Int:
+                    pushToStack(std::get<int64_t>(a) == std::get<int64_t>(b));
+                    break;
+                case ValueType::Float:
+                    pushToStack(std::get<double>(a) == std::get<double>(b));
+                    break;
+                case ValueType::Vector:
+                    pushToStack(std::get<sf::Vector2f>(a) == std::get<sf::Vector2f>(b));
+                    break;
+                case ValueType::Object:
+                    pushToStack(std::get<GameObject *>(a) == std::get<GameObject *>(b));
+                    break;
+                case ValueType::String:
+                    pushToStack(std::get<StringObject *>(a)->getString() == std::get<StringObject *>(b)->getString());
+                    break;
+                }
+            }
+            break;
             case Instructions::NotEquals:
-                break;
+            {
+                Value a = popFromStackOrError();
+                Value b = popFromStackOrError();
+                if (a.index() != b.index())
+                {
+                    pushToStack(true);
+                }
+                switch (a.index())
+                {
+                case ValueType::Bool:
+                    pushToStack(std::get<bool>(a) != std::get<bool>(b));
+                    break;
+                case ValueType::Int:
+                    pushToStack(std::get<int64_t>(a) != std::get<int64_t>(b));
+                    break;
+                case ValueType::Float:
+                    pushToStack(std::get<double>(a) != std::get<double>(b));
+                    break;
+                case ValueType::Vector:
+                    pushToStack(std::get<sf::Vector2f>(a) != std::get<sf::Vector2f>(b));
+                    break;
+                case ValueType::Object:
+                    pushToStack(std::get<GameObject *>(a) != std::get<GameObject *>(b));
+                    break;
+                case ValueType::String:
+                    pushToStack(std::get<StringObject *>(a)->getString() != std::get<StringObject *>(b)->getString());
+                    break;
+                }
+            }
+            break;
             case Instructions::More:
             {
                 Value b = popFromStackOrError();
@@ -495,7 +587,12 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 Value a = popFromStackOrError();
                 if (a.index() != b.index())
                 {
-                    error(debugInfo, pos, "Attempted to perform comparison on two different types");
+                    error(debugInfo,
+                          pos,
+                          std::string("Attempted to perform comparison on two different types: ") +
+                              typeToString((ValueType)a.index()) +
+                              " and " +
+                              typeToString((ValueType)b.index()));
                 }
                 if (a.index() == ValueType::Int)
                 {
@@ -574,6 +671,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
             // Exit function without returning a value
             case Instructions::ExitFunction:
             {
+                returning = true;
                 break;
             }
             break;
@@ -585,8 +683,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
             }
             case Instructions::GetField:
             {
-
-                std::string const &fieldName = popFromStackAsType<StringObject *>("Expected field name on stack")->getString();
+                std::string const &fieldName = parseByteOperandToString(pos, func.bytes);
                 GameObject *obj = popFromStackAsType<GameObject *>("Expected game object on stack");
                 if (std::optional<Value> val = obj->getFieldValue(fieldName); val.has_value())
                 {
@@ -600,7 +697,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
             break;
             case Instructions::SetField:
             {
-                std::string const &fieldName = popFromStackAsType<StringObject *>("Expected field name on stack")->getString();
+                std::string const &fieldName = parseByteOperandToString(pos, func.bytes);
                 Value v = popFromStackOrError();
                 popFromStackAsType<GameObject *>("Expected game object on stack")->setFieldValue(fieldName, v);
             }
@@ -634,7 +731,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
 
             case Instructions::CreateSoundPlayer:
             {
-                std::string const& assetName = popFromStackAsType<StringObject *>("Expected audio asset name")->getString();
+                std::string const &assetName = popFromStackAsType<StringObject *>("Expected audio asset name")->getString();
                 m_objects.push_back(std::make_unique<AudioObject>(m_types[m_typeNames["AudioPlayer"]].get(),
                                                                   assetName,
                                                                   popFromStackAsType<StringObject *>("Expected object name")->getString(), *this));
@@ -643,6 +740,25 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
             break;
             case Instructions::PlaySound:
             {
+            }
+            break;
+            case Instructions::GetSize:
+            {
+                GameObject *obj = popFromStackAsType<GameObject *>("Expected object on stack");
+                pushToStack(obj->getSize());
+            }
+            break;
+            case Instructions::SetSize:
+            {
+                sf::Vector2f size = popFromStackAsType<sf::Vector2f>("Expected size on stack");
+                popFromStackAsType<GameObject *>("Expected object on stack")->setSize(size);
+            }
+            break;
+            case Instructions::AreOverlapping:
+            {
+                GameObject *obj = popFromStackAsType<GameObject *>("Expected object on stack");
+                GameObject *obj2 = popFromStackAsType<GameObject *>("Expected object on stack");
+                pushToStack(sf::FloatRect(obj->getPosition(), obj->getSize()).findIntersection(sf::FloatRect(obj2->getPosition(), obj2->getSize())).has_value());
             }
             break;
             default:
@@ -662,5 +778,6 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
     // TODO: do garbage collection here
 
     collectGarbage();
+    m_operationStack.pop_back();
     popVariableBlock();
 }

@@ -21,6 +21,7 @@ namespace Engine
         Mul,
         And,
         Or,
+        Not,
         // assign position of object on the stack to the value from the stack
         SetPosition,
         // push position of the object on the stack
@@ -55,5 +56,8 @@ namespace Engine
         GetConst,
         CreateSoundPlayer,
         PlaySound,
+        GetSize,
+        SetSize,
+        AreOverlapping,
     };
 }

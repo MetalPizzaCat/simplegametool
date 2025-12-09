@@ -22,6 +22,14 @@ Project::Project::Project(std::string const &path)
     m_name = json.at("project_name");
     m_mainScenePath = m_rootFolder + "/" + json.at("start_scene").get<std::string>();
     m_assetFolderPath = m_rootFolder + "/" + json.at("asset_folder").get<std::string>();
+    if (json.contains("window_size"))
+    {
+        m_windowSize = sf::Vector2u(json.at("window_size").at("w").get<uint32_t>(), json.at("window_size").at("h").get<uint32_t>());
+    }
+    else
+    {
+        m_windowSize = sf::Vector2u(600, 800);
+    }
 }
 
 void Project::Project::loadAssetInfoIntoContentManager()
@@ -83,18 +91,21 @@ std::unique_ptr<Engine::SpriteFramesAsset> Project::Project::loadSpriteFramesAss
 {
 
     std::map<std::string, Engine::SpriteAnimation> animations;
-    for (nlohmann::json::iterator it = json.at("animations").begin(); it != json.at("animations").end(); ++it)
+    if (json.contains("animations"))
     {
-        std::string name = it->at("name");
-        int fps = it->at("fps");
-        bool looping = it->at("looping");
-        std::vector<sf::IntRect> frames;
-        for (auto const &frame : it->at("frames"))
+        for (nlohmann::json::iterator it = json.at("animations").begin(); it != json.at("animations").end(); ++it)
         {
-            frames.push_back(sf::IntRect(sf::Vector2i(frame.at("x"), frame.at("y")),
-                                         sf::Vector2i(frame.at("w"), frame.at("h"))));
+            std::string name = it->at("name");
+            int fps = it->at("fps");
+            bool looping = it->at("looping");
+            std::vector<sf::IntRect> frames;
+            for (auto const &frame : it->at("frames"))
+            {
+                frames.push_back(sf::IntRect(sf::Vector2i(frame.at("x"), frame.at("y")),
+                                             sf::Vector2i(frame.at("w"), frame.at("h"))));
+            }
+            animations[name] = Engine::SpriteAnimation{.frames = frames, .framesPerSecond = fps, .looping = looping};
         }
-        animations[name] = Engine::SpriteAnimation{.frames = frames, .framesPerSecond = fps, .looping = looping};
     }
     return std::make_unique<Engine::SpriteFramesAsset>(m_rootFolder + "/" + json.at("file_path").get<std::string>(),
                                                        animations,
