@@ -17,6 +17,10 @@ std::vector<std::unique_ptr<Code::Token>> Code::Parser::parseTokens()
         {
             tokens.push_back(std::move(keyword));
         }
+        else if (std::unique_ptr<BoolToken> boolval = parseBool(); boolval != nullptr)
+        {
+            tokens.push_back(std::move(boolval));
+        }
         else if (std::unique_ptr<InstructionToken> instruction = parseInstruction(); instruction != nullptr)
         {
             tokens.push_back(std::move(instruction));
@@ -264,7 +268,7 @@ std::unique_ptr<Code::AssetRefToken> Code::Parser::parseAssetRef()
 
 std::unique_ptr<Code::VariableToken> Code::Parser::parseVariableName()
 {
- if (std::optional<char> ch = getCurrent(); !ch.has_value() || ch.value() != '$')
+    if (std::optional<char> ch = getCurrent(); !ch.has_value() || ch.value() != '$')
     {
         return nullptr;
     }
@@ -394,6 +398,25 @@ std::unique_ptr<Code::FloatToken> Code::Parser::parseFloat()
     }
     advanceBy(num.size());
     return std::make_unique<FloatToken>(m_row, m_column, numVal);
+}
+
+std::unique_ptr<Code::BoolToken> Code::Parser::parseBool()
+{
+    if (checkString("true"))
+    {
+        size_t row = m_row;
+        size_t column = m_column;
+        advanceBy(std::string("true").size());
+        return std::make_unique<BoolToken>(row, column, true);
+    }
+    if (checkString("false"))
+    {
+        size_t row = m_row;
+        size_t column = m_column;
+        advanceBy(std::string("false").size());
+        return std::make_unique<BoolToken>(row, column, false);
+    }
+    return nullptr;
 }
 
 std::unique_ptr<Code::InstructionToken> Code::Parser::parseInstruction()

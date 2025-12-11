@@ -149,8 +149,11 @@ namespace Code
 
     class BoolToken : public Token
     {
+    public:
         explicit BoolToken(size_t row, size_t column, bool val) : Token(row, column), m_val(val) {}
         std::string toString() const override;
+
+        bool getValue() const { return m_val; }
 
     private:
         bool m_val;

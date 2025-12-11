@@ -22,7 +22,7 @@ Engine::Scene::Scene(Runnable::RunnableCode const &code) : m_strings(code.string
                                                   std::unordered_map<std::string, Runnable::CodeConstantValue>(), // fields
                                                   std::unordered_map<std::string, Runnable::CodeConstantValue>{}, // constants
                                                   std::unordered_map<std::string, Runnable::RunnableFunction>(),  // methods
-                                                  std::unordered_map<std::string, std::function<void(Scene & scene)>>{{"is_key_pressed", Standard::sqrt}}));
+                                                  std::unordered_map<std::string, std::function<void(Scene & scene)>>{{"is_key_pressed", Standard::Input::isKeyPressed}}));
 
     addType("Scancode", std::make_unique<ObjectType>(nullptr,
                                                      nullptr,
@@ -315,13 +315,14 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 size_t typeId = parseOperationConstant<int64_t>(func.bytes.begin() + (pos + 1), func.bytes.end());
                 pos += sizeof(size_t);
                 m_objects.push_back(std::make_unique<GameObject>(m_types[typeId].get(), name, *this));
+                GameObject * inst = m_objects.back().get();
                 if (m_objects.back()->getType()->hasMethod("init"))
                 {
-                    pushToStack(m_objects.back().get());
+                    pushToStack(inst);
                     runFunction(m_objects.back()->getType()->getMethod("init"), Runnable::RunnableFunctionDebugInfo(typeId, "init"));
                 }
 
-                pushToStack(m_objects.back().get());
+                pushToStack(inst);
             }
             break;
             case Instructions::GetInstanceByName:
@@ -427,9 +428,59 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
             }
             break;
             case Instructions::Div:
-                break;
+            {
+                Value b = popFromStackOrError();
+                Value a = popFromStackOrError();
+
+                if (a.index() == ValueType::Vector && b.index() == ValueType::Float)
+                {
+                    pushToStack(std::get<sf::Vector2f>(a) / (float)std::get<double>(b));
+                }
+                if (a.index() != b.index())
+                {
+                    error(debugInfo, pos, std::string("Attempted to perform arithmetic on incompatible types: ") + typeToString((ValueType)a.index()) + " and " + typeToString((ValueType)b.index()));
+                }
+                else if (a.index() == ValueType::Int)
+                {
+                    pushToStack(std::get<int64_t>(a) / std::get<int64_t>(b));
+                }
+                else if (a.index() == ValueType::Float)
+                {
+                    pushToStack(std::get<double>(a) / std::get<double>(b));
+                }
+                else
+                {
+                    error(debugInfo, pos, std::string("Attempted to perform arithmetic on incompatible types: ") + typeToString((ValueType)a.index()) + " and " + typeToString((ValueType)b.index()));
+                }
+            }
+            break;
             case Instructions::Mul:
-                break;
+            {
+                Value b = popFromStackOrError();
+                Value a = popFromStackOrError();
+
+                if (a.index() == ValueType::Vector && b.index() == ValueType::Float)
+                {
+                    pushToStack(std::get<sf::Vector2f>(a) * (float)std::get<double>(b));
+                }
+                if (a.index() != b.index())
+                {
+                    error(debugInfo, pos, std::string("Attempted to perform arithmetic on incompatible types: ") + typeToString((ValueType)a.index()) + " and " + typeToString((ValueType)b.index()));
+                }
+                else if (a.index() == ValueType::Int)
+                {
+                    pushToStack(std::get<int64_t>(a) * std::get<int64_t>(b));
+                }
+                else if (a.index() == ValueType::Float)
+                {
+                    pushToStack(std::get<double>(a) * std::get<double>(b));
+                }
+                else
+                {
+                    error(debugInfo, pos, std::string("Attempted to perform arithmetic on incompatible types: ") + typeToString((ValueType)a.index()) + " and " + typeToString((ValueType)b.index()));
+                }
+            }
+            break;
             case Instructions::And:
                 break;
             case Instructions::Or:
@@ -458,7 +509,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
             {
                 Value y = popFromStackAsType<double>("Expected float on stack for y");
                 Value x = popFromStackAsType<double>("Expected float on stack for x");
-                
+
                 pushToStack(sf::Vector2f(std::get<double>(x), std::get<double>(y)));
             }
             break;

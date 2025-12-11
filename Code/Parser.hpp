@@ -56,6 +56,8 @@ namespace Code
 
         std::unique_ptr<FloatToken> parseFloat();
 
+        std::unique_ptr<BoolToken> parseBool();
+
         std::unique_ptr<InstructionToken> parseInstruction();
 
     private:

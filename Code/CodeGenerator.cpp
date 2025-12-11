@@ -171,7 +171,7 @@ std::pair<std::string, Engine::Runnable::RunnableFunction> Code::Fusion::FusionC
             switch ((Engine::Runnable::CodeConstantValueType)val.index())
             {
             case Engine::Runnable::CodeConstantValueType::Bool:
-                error("boolean not implemented");
+                bytes.push_back((uint8_t)std::get<bool>(val));
                 break;
             case Engine::Runnable::CodeConstantValueType::Int:
             {
@@ -284,6 +284,7 @@ void Code::Fusion::FusionCodeGenerator::parseInstruction(FusionInstruction instr
         }
         break;
         case InstructionArgumentType::Bool:
+            bytes.push_back((uint8_t)getTokenOrError<BoolToken>("Expected boolean value")->getValue());
             break;
         case InstructionArgumentType::Int:
         {
@@ -467,6 +468,10 @@ Engine::Runnable::CodeConstantValue Code::Fusion::FusionCodeGenerator::parseCons
     if (isOfType<IntToken>())
     {
         return getTokenOrError<IntToken>("")->getValue();
+    }
+    if (isOfType<BoolToken>())
+    {
+        return getTokenOrError<BoolToken>("")->getValue();
     }
     if (isOfType<FloatToken>())
     {

@@ -26,3 +26,9 @@ void Engine::Standard::Audio::setListenerPosition(Scene &scene)
     sf::Vector2f pos = scene.popFromStackAsType<sf::Vector2f>("Expected position on stack");
     sf::Listener::setPosition(sf::Vector3f(pos.x, pos.y, 0));
 }
+
+void Engine::Standard::Input::isKeyPressed(Scene &scene)
+{
+    int64_t scancode = scene.popFromStackAsType<int64_t>("Expected scancode on stack");
+    scene.pushToStack(sf::Keyboard::isKeyPressed((sf::Keyboard::Scancode)scancode));
+}
