@@ -1,9 +1,9 @@
 #pragma once
-#include "Asset.hpp"
 #include <map>
 #include <functional>
-#include "Value.hpp"
-#include "Runnable.hpp"
+#include "../Content/Asset.hpp"
+#include "../Execution/Value.hpp"
+#include "../Execution/Runnable.hpp"
 
 namespace Engine
 {

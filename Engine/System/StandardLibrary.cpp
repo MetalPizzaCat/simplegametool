@@ -1,7 +1,7 @@
 #include "StandardLibrary.hpp"
-#include "Error.hpp"
+#include "../Error.hpp"
 #include <cmath>
-#include "AudioObject.hpp"
+#include "../Object/AudioObject.hpp"
 #include "Random.hpp"
 void Engine::Standard::sqrt(Scene &scene)
 {

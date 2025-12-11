@@ -36,33 +36,42 @@ add_executable(simplegametool main.cpp
     Code/Error.cpp
     Code/DebugInfo.hpp
     Code/DebugInfo.cpp
-    Engine/Runnable.hpp
-    Engine/Runnable.cpp
-    Engine/Asset.hpp
-    Engine/Asset.cpp
-    Engine/ContentManager.hpp
-    Engine/ContentManager.cpp
-    Engine/GameObject.hpp
-    Engine/GameObject.cpp
-    Engine/ObjectType.hpp
-    Engine/ObjectType.cpp
-    Engine/Instructions.hpp
+
+
+    Engine/Object/GameObject.hpp
+    Engine/Object/GameObject.cpp
+    Engine/Object/ObjectType.hpp
+    Engine/Object/ObjectType.cpp
+    Engine/Object/TextObject.hpp
+    Engine/Object/TextObject.cpp
+    Engine/Object/AudioObject.hpp
+    Engine/Object/AudioObject.cpp
+
+    Engine/Execution/Instructions.hpp
+    Engine/Execution/Value.hpp
+    Engine/Execution/Value.cpp
+    Engine/Execution/Runnable.hpp
+    Engine/Execution/Runnable.cpp
+
+    Engine/Content/AnimatedSprite.hpp
+    Engine/Content/AnimatedSprite.cpp
+    Engine/Content/Sound.hpp
+    Engine/Content/Sound.cpp
+    Engine/Content/Asset.hpp
+    Engine/Content/Asset.cpp
+    Engine/Content/ContentManager.hpp
+    Engine/Content/ContentManager.cpp
+
+    Engine/System/Random.hpp
+    Engine/System/Random.cpp
+    Engine/System/StandardLibrary.hpp
+    Engine/System/StandardLibrary.cpp
+
     Engine/Scene.hpp
     Engine/Scene.cpp
-    Engine/Value.hpp
-    Engine/Value.cpp
     Engine/Error.hpp
     Engine/Error.cpp
-    Engine/AnimatedSprite.hpp
-    Engine/AnimatedSprite.cpp
-    Engine/StandardLibrary.hpp
-    Engine/StandardLibrary.cpp
-    Engine/AudioObject.hpp
-    Engine/AudioObject.cpp
-    Engine/Sound.hpp
-    Engine/Sound.cpp
-    Engine/Random.hpp
-    Engine/Random.cpp
+    
     Project/Project.hpp
     Project/Project.cpp
     Project/Errors.hpp

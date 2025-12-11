@@ -5,7 +5,7 @@
 #include <iostream>
 #include <sstream>
 #include "Errors.hpp"
-#include "../Engine/ContentManager.hpp"
+#include "../Engine/Content/ContentManager.hpp"
 
 Project::Project::Project(std::string const &path)
 {

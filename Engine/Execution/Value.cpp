@@ -1,6 +1,6 @@
 #include "Value.hpp"
-#include "GameObject.hpp"
-#include "MemoryObject.hpp"
+#include "../Object/GameObject.hpp"
+#include "../Object/MemoryObject.hpp"
 
 std::string Engine::valueToString(Value const &v)
 {

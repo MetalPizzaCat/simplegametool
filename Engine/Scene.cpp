@@ -1,9 +1,9 @@
 #include "Scene.hpp"
 #include "Error.hpp"
-#include "StandardLibrary.hpp"
-#include "AudioObject.hpp"
-#include "Input.hpp"
-#include "Random.hpp"
+#include "System/StandardLibrary.hpp"
+#include "Object/AudioObject.hpp"
+#include "System/Input.hpp"
+#include "System/Random.hpp"
 
 #include <numbers>
 

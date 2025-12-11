@@ -1,7 +1,7 @@
 #pragma once
 
 #include "GameObject.hpp"
-#include "Sound.hpp"
+#include "../Content/Sound.hpp"
 
 namespace Engine
 {

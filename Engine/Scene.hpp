@@ -4,12 +4,12 @@
 #include <map>
 #include <memory>
 #include <SFML/Graphics.hpp>
-#include "GameObject.hpp"
+#include "Object/GameObject.hpp"
 #include <iostream>
-#include "Value.hpp"
-#include "Instructions.hpp"
+#include "Execution/Value.hpp"
+#include "Execution/Instructions.hpp"
 #include "../Code/CodeBuilder.hpp"
-#include "MemoryObject.hpp"
+#include "Object/MemoryObject.hpp"
 #include "Error.hpp"
 
 namespace Engine

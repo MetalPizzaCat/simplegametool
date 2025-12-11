@@ -1,8 +1,8 @@
 #pragma once
 
 #include "ObjectType.hpp"
-#include "ContentManager.hpp"
-#include "AnimatedSprite.hpp"
+#include "../Content/ContentManager.hpp"
+#include "../Content/AnimatedSprite.hpp"
 
 namespace Engine
 {

@@ -1,5 +1,5 @@
 #include "ObjectType.hpp"
-#include "Scene.hpp"
+#include "../Scene.hpp"
 Engine::ObjectType::ObjectType(SpriteFramesAsset const *sprite,
                                std::unordered_map<std::string, Engine::Runnable::CodeConstantValue> const &fields,
                                std::unordered_map<std::string, Runnable::CodeConstantValue> const &constants,

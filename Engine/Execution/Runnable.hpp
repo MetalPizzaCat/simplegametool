@@ -4,7 +4,7 @@
 #include <string>
 #include <map>
 #include <cstdint>
-#include "../Code/DebugInfo.hpp"
+#include "../../Code/DebugInfo.hpp"
 
 namespace Engine::Runnable
 {

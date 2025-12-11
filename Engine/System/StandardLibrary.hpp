@@ -1,5 +1,5 @@
 #pragma once
-#include "Scene.hpp"
+#include "../Scene.hpp"
 
 namespace Engine::Standard
 {

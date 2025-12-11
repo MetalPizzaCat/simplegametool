@@ -3,7 +3,7 @@
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <SFML/System.hpp>
-#include "../Engine/Asset.hpp"
+#include "../Engine/Content/Asset.hpp"
 
 namespace Project
 {

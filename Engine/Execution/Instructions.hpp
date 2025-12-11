@@ -1,5 +1,5 @@
 #pragma once
-
+#include <cstdint>
 namespace Engine
 {
     using JumpDistanceType = int64_t;
