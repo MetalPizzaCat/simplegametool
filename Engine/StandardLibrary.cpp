@@ -2,6 +2,7 @@
 #include "Error.hpp"
 #include <cmath>
 #include "AudioObject.hpp"
+#include "Random.hpp"
 void Engine::Standard::sqrt(Scene &scene)
 {
     Value a = scene.popFromStackOrError();
@@ -31,4 +32,24 @@ void Engine::Standard::Input::isKeyPressed(Scene &scene)
 {
     int64_t scancode = scene.popFromStackAsType<int64_t>("Expected scancode on stack");
     scene.pushToStack(sf::Keyboard::isKeyPressed((sf::Keyboard::Scancode)scancode));
+}
+
+void Engine::Standard::Random::seed(Scene &scene)
+{
+    int64_t seed = scene.popFromStackAsType<int64_t>("Expected seed value on stack");
+    Engine::Random::getInstance().seed(seed);
+}
+
+void Engine::Standard::Random::getRandomIntInRange(Scene &scene)
+{
+    int64_t max = scene.popFromStackAsType<int64_t>("Expected max value on stack");
+    int64_t min = scene.popFromStackAsType<int64_t>("Expected min value on stack");
+    scene.pushToStack(Engine::Random::getInstance().getRandomIntInRange(min, max));
+}
+
+void Engine::Standard::Random::getRandomFloatInRange(Scene &scene)
+{
+    double max = scene.popFromStackAsType<double>("Expected max value on stack");
+    double min = scene.popFromStackAsType<double>("Expected min value on stack");
+    scene.pushToStack(Engine::Random::getInstance().getRandomFloatInRange(min, max));
 }

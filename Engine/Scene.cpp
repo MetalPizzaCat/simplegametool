@@ -3,6 +3,7 @@
 #include "StandardLibrary.hpp"
 #include "AudioObject.hpp"
 #include "Input.hpp"
+#include "Random.hpp"
 
 #include <numbers>
 
@@ -52,6 +53,16 @@ Engine::Scene::Scene(Runnable::RunnableCode const &code) : m_strings(code.string
                                                   std::unordered_map<std::string, Runnable::RunnableFunction>(),  // methods
                                                   std::unordered_map<std::string, std::function<void(Scene & scene)>>{
                                                       {"set_listener_position", Standard::Audio::audioPlayerPlay}}));
+
+    addType("Random", std::make_unique<ObjectType>(nullptr,
+                                                   nullptr,
+                                                   std::unordered_map<std::string, Runnable::CodeConstantValue>(), // fields
+                                                   std::unordered_map<std::string, Runnable::CodeConstantValue>(), // constants
+                                                   std::unordered_map<std::string, Runnable::RunnableFunction>(),  // methods
+                                                   std::unordered_map<std::string, std::function<void(Scene & scene)>>{
+                                                       {"seed", Standard::Random::seed},
+                                                       {"rand_range_int", Standard::Random::getRandomIntInRange},
+                                                       {"rand_range_float", Standard::Random::getRandomFloatInRange}}));
     for (Runnable::TypeInfo const &type : code.types)
     {
         if (type.isDefaultType())
@@ -315,7 +326,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 size_t typeId = parseOperationConstant<int64_t>(func.bytes.begin() + (pos + 1), func.bytes.end());
                 pos += sizeof(size_t);
                 m_objects.push_back(std::make_unique<GameObject>(m_types[typeId].get(), name, *this));
-                GameObject * inst = m_objects.back().get();
+                GameObject *inst = m_objects.back().get();
                 if (m_objects.back()->getType()->hasMethod("init"))
                 {
                     pushToStack(inst);

@@ -15,6 +15,16 @@ namespace Engine::Standard
 
     }
 
+    namespace Random
+    {
+
+        void seed(Scene &scene);
+
+        void getRandomIntInRange(Scene &scene);
+
+        void getRandomFloatInRange(Scene &scene);
+    }
+
     namespace Audio
     {
         void audioPlayerPlay(Scene &scene);

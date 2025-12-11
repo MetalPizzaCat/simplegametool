@@ -52,9 +52,10 @@ void displayError(size_t column, size_t row, std::string const &code, std::strin
     std::cerr << std::endl;
 }
 
+#include "Engine/Random.hpp"
+
 int main(int, char **)
 {
-
     using namespace Code;
     using namespace Engine;
     try

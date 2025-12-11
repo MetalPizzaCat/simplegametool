@@ -34,6 +34,7 @@ Engine::GameObject::GameObject(ObjectType const *type, std::string const &name, 
     if (m_sprite)
     {
         m_sprite->setAnimationFinishedCallback(std::bind(&GameObject::spriteAnimationFinishedCallback, this));
+        m_size = sf::Vector2f(m_sprite->getCurrentFrameSize().size.x, m_sprite->getCurrentFrameSize().size.y);
     }
 }
 

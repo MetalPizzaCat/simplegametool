@@ -61,6 +61,8 @@ add_executable(simplegametool main.cpp
     Engine/AudioObject.cpp
     Engine/Sound.hpp
     Engine/Sound.cpp
+    Engine/Random.hpp
+    Engine/Random.cpp
     Project/Project.hpp
     Project/Project.cpp
     Project/Errors.hpp
