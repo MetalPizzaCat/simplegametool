@@ -13,3 +13,7 @@ Engine::SoundAsset::SoundAsset(std::string const &path, float pitch, float defau
     : Asset(path), m_pitch(pitch), m_defaultVolume(defaultVolume), m_looping(looping), m_positional(positional)
 {
 }
+
+Engine::FontAsset::FontAsset(std::string const &path) : Asset(path)
+{
+}

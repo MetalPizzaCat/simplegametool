@@ -6,6 +6,7 @@
 #include "Asset.hpp"
 #include "AnimatedSprite.hpp"
 #include "Sound.hpp"
+#include "Label.hpp"
 namespace Engine
 {
     class ContentManager
@@ -30,9 +31,16 @@ namespace Engine
         /// @param asset Asset data
         void addSoundAsset(std::string const &name, std::unique_ptr<SoundAsset> asset);
 
+        /// @brief Manually register a font asset in the system
+        /// @param name Name of the asset
+        /// @param asset Asset data
+        void addFontAsset(std::string const &name, std::unique_ptr<FontAsset> asset);
+
         SpriteFramesAsset const *getAnimationAsset(std::string const &name) const;
 
         SoundAsset const *getSoundAsset(std::string const &name) const;
+
+        FontAsset const *getFontAsset(std::string const &name) const;
 
         /// @brief Load texture from disk. If texture has already been loaded, pointer to existing texture is returned
         /// @param path
@@ -41,14 +49,23 @@ namespace Engine
 
         sf::SoundBuffer *loadSoundBuffer(std::string const &path);
 
-        std::unique_ptr<AnimatedSprite> loadSprite(SpriteFramesAsset const *asset);
+        /// @brief
+        /// @param path
+        /// @return
+        sf::Font *loadFont(std::string const &path);
 
-        std::unique_ptr<Sound> loadSound(SoundAsset const *asset);
+        sf::Font *getFontByAssetName(std::string const &name);
+
+        std::unique_ptr<AnimatedSprite> createSpriteFromAsset(SpriteFramesAsset const *asset);
+
+        std::unique_ptr<Sound> createSoundFromAsset(SoundAsset const *asset);
 
     private:
         std::map<std::string, std::unique_ptr<sf::Texture>> m_textures;
         std::map<std::string, std::unique_ptr<sf::SoundBuffer>> m_sounds;
+        std::map<std::string, std::unique_ptr<sf::Font>> m_fonts;
         std::map<std::string, std::unique_ptr<SpriteFramesAsset>> m_spriteFrameAssets;
         std::map<std::string, std::unique_ptr<SoundAsset>> m_soundAssets;
+        std::map<std::string, std::unique_ptr<FontAsset>> m_fontAssets;
     };
 }

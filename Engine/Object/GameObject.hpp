@@ -13,7 +13,7 @@ namespace Engine
     public:
         explicit GameObject(ObjectType const *type, std::string const &name, Scene &state);
 
-        void draw(sf::RenderWindow &window);
+        virtual void draw(sf::RenderWindow &window);
 
         /// @brief Set position of the object in the game space
         /// @param pos Position

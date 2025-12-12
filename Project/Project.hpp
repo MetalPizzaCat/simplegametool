@@ -32,6 +32,8 @@ namespace Project
 
         std::unique_ptr<Engine::SoundAsset> loadSoundAsset(nlohmann::json const &json) const;
 
+        std::unique_ptr<Engine::FontAsset> loadFontAsset(nlohmann::json const& json) const;
+
     private:
         std::string m_name;
         std::string m_mainScenePath;

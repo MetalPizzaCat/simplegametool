@@ -59,5 +59,6 @@ namespace Engine
         GetSize,
         SetSize,
         AreOverlapping,
+        CreateLabel,
     };
 }

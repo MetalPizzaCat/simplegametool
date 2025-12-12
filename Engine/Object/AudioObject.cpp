@@ -4,7 +4,7 @@ Engine::AudioObject::AudioObject(ObjectType const *type,
                                  std::string const &soundAssetName,
                                  std::string const &name,
                                  Scene &state) : GameObject(type, name, state),
-                                                 m_sound(ContentManager::getInstance().loadSound(ContentManager::getInstance().getSoundAsset(soundAssetName)))
+                                                 m_sound(ContentManager::getInstance().createSoundFromAsset(ContentManager::getInstance().getSoundAsset(soundAssetName)))
 {
 }
 

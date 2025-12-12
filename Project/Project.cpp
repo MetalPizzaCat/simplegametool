@@ -68,6 +68,10 @@ void Project::Project::loadAsset(std::string const &path) const
         {
             Engine::ContentManager::getInstance().addSoundAsset(fileData.at("name"), loadSoundAsset(fileData));
         }
+        else if (fileData.at("type").get<std::string>() == "font")
+        {
+            Engine::ContentManager::getInstance().addFontAsset(fileData.at("name"), loadFontAsset(fileData));
+        }
     }
     catch (nlohmann::json::exception e)
     {
@@ -122,4 +126,9 @@ std::unique_ptr<Engine::SoundAsset> Project::Project::loadSoundAsset(nlohmann::j
         json.at("default_volume").get<int>(),
         json.at("looping").get<bool>(),
         json.at("positional").get<bool>());
+}
+
+std::unique_ptr<Engine::FontAsset> Project::Project::loadFontAsset(nlohmann::json const &json) const
+{
+    return std::make_unique<Engine::FontAsset>(m_rootFolder + "/" + json.at("file_path").get<std::string>());
 }

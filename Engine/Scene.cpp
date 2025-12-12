@@ -4,6 +4,7 @@
 #include "Object/AudioObject.hpp"
 #include "System/Input.hpp"
 #include "System/Random.hpp"
+#include "Object/TextObject.hpp"
 
 #include <numbers>
 
@@ -63,6 +64,16 @@ Engine::Scene::Scene(Runnable::RunnableCode const &code) : m_strings(code.string
                                                        {"seed", Standard::Random::seed},
                                                        {"rand_range_int", Standard::Random::getRandomIntInRange},
                                                        {"rand_range_float", Standard::Random::getRandomFloatInRange}}));
+
+    addType("Label", std::make_unique<ObjectType>(nullptr,
+                                                  nullptr,
+                                                  std::unordered_map<std::string, Runnable::CodeConstantValue>(), // fields
+                                                  std::unordered_map<std::string, Runnable::CodeConstantValue>(), // constants
+                                                  std::unordered_map<std::string, Runnable::RunnableFunction>(),  // methods
+                                                  std::unordered_map<std::string, std::function<void(Scene & scene)>>{
+                                                      {"set_text", Standard::Label::setText},
+                                                      {"get_text", Standard::Label::getText},
+                                                      {"set_text_size", Standard::Label::setFontSize}}));
     for (Runnable::TypeInfo const &type : code.types)
     {
         if (type.isDefaultType())
@@ -405,7 +416,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 {
                     pushToStack(std::get<sf::Vector2f>(a) + std::get<sf::Vector2f>(b));
                 }
-                else if (a.index() == ValueType::Int)
+                else if (a.index() == ValueType::Integer)
                 {
                     pushToStack(std::get<int64_t>(a) + std::get<int64_t>(b));
                 }
@@ -428,7 +439,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 {
                     pushToStack(std::get<sf::Vector2f>(a) - std::get<sf::Vector2f>(b));
                 }
-                else if (a.index() == ValueType::Int)
+                else if (a.index() == ValueType::Integer)
                 {
                     pushToStack(std::get<int64_t>(a) - std::get<int64_t>(b));
                 }
@@ -451,7 +462,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 {
                     error(debugInfo, pos, std::string("Attempted to perform arithmetic on incompatible types: ") + typeToString((ValueType)a.index()) + " and " + typeToString((ValueType)b.index()));
                 }
-                else if (a.index() == ValueType::Int)
+                else if (a.index() == ValueType::Integer)
                 {
                     pushToStack(std::get<int64_t>(a) / std::get<int64_t>(b));
                 }
@@ -478,7 +489,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 {
                     error(debugInfo, pos, std::string("Attempted to perform arithmetic on incompatible types: ") + typeToString((ValueType)a.index()) + " and " + typeToString((ValueType)b.index()));
                 }
-                else if (a.index() == ValueType::Int)
+                else if (a.index() == ValueType::Integer)
                 {
                     pushToStack(std::get<int64_t>(a) * std::get<int64_t>(b));
                 }
@@ -567,7 +578,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 case ValueType::Bool:
                     pushToStack(std::get<bool>(a) == std::get<bool>(b));
                     break;
-                case ValueType::Int:
+                case ValueType::Integer:
                     pushToStack(std::get<int64_t>(a) == std::get<int64_t>(b));
                     break;
                 case ValueType::Float:
@@ -598,7 +609,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 case ValueType::Bool:
                     pushToStack(std::get<bool>(a) != std::get<bool>(b));
                     break;
-                case ValueType::Int:
+                case ValueType::Integer:
                     pushToStack(std::get<int64_t>(a) != std::get<int64_t>(b));
                     break;
                 case ValueType::Float:
@@ -629,7 +640,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                               " and " +
                               typeToString((ValueType)b.index()));
                 }
-                if (a.index() == ValueType::Int)
+                if (a.index() == ValueType::Integer)
                 {
                     pushToStack(std::get<int64_t>(a) > std::get<int64_t>(b));
                 }
@@ -656,7 +667,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                               " and " +
                               typeToString((ValueType)b.index()));
                 }
-                if (a.index() == ValueType::Int)
+                if (a.index() == ValueType::Integer)
                 {
                     pushToStack(std::get<int64_t>(a) < std::get<int64_t>(b));
                 }
@@ -821,6 +832,15 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 GameObject *obj = popFromStackAsType<GameObject *>("Expected object on stack");
                 GameObject *obj2 = popFromStackAsType<GameObject *>("Expected object on stack");
                 pushToStack(sf::FloatRect(obj->getPosition(), obj->getSize()).findIntersection(sf::FloatRect(obj2->getPosition(), obj2->getSize())).has_value());
+            }
+            break;
+            case Instructions::CreateLabel:
+            {
+                std::string const &assetName = popFromStackAsType<StringObject *>("Expected font name")->getString();
+                m_objects.push_back(std::make_unique<TextObject>(m_types[m_typeNames["Label"]].get(),
+                                                                  assetName,
+                                                                  popFromStackAsType<StringObject *>("Expected object name")->getString(), *this));
+                pushToStack(m_objects.back().get());
             }
             break;
             default:

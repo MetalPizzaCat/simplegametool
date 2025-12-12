@@ -31,4 +31,14 @@ namespace Engine::Standard
 
         void setListenerPosition(Scene &scene);
     }
+
+    namespace Label
+    {
+
+        void setText(Scene &scene);
+
+        void getText(Scene &scene);
+
+        void setFontSize(Scene &scene);
+    }
 } // namespace Engine::Standard

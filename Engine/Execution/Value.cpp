@@ -8,7 +8,7 @@ std::string Engine::valueToString(Value const &v)
     {
     case ValueType::Bool:
         return std::string(std::get<bool>(v) ? "true" : "false");
-    case ValueType::Int:
+    case ValueType::Integer:
         return std::to_string(std::get<int64_t>(v));
     case ValueType::Float:
         return std::to_string(std::get<double>(v));
@@ -28,7 +28,7 @@ const char *Engine::typeToString(ValueType type)
     {
     case ValueType::Bool:
         return "Bool";
-    case ValueType::Int:
+    case ValueType::Integer:
         return "Int";
     case ValueType::Float:
         return "Float";

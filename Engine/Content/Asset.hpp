@@ -58,4 +58,12 @@ namespace Engine
 
         sf::IntRect m_defaultFrame;
     };
+
+    class FontAsset : public Asset
+    {
+    public:
+        explicit FontAsset(std::string const &path);
+
+    private:
+    };
 }

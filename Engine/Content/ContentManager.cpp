@@ -1,6 +1,6 @@
 #include "ContentManager.hpp"
 #include <iostream>
-
+#include "../Error.hpp"
 void Engine::ContentManager::addSpriteAsset(std::string const &name, std::unique_ptr<SpriteFramesAsset> asset)
 {
     m_spriteFrameAssets[name] = std::move(asset);
@@ -9,6 +9,11 @@ void Engine::ContentManager::addSpriteAsset(std::string const &name, std::unique
 void Engine::ContentManager::addSoundAsset(std::string const &name, std::unique_ptr<SoundAsset> asset)
 {
     m_soundAssets[name] = std::move(asset);
+}
+
+void Engine::ContentManager::addFontAsset(std::string const &name, std::unique_ptr<FontAsset> asset)
+{
+    m_fontAssets[name] = std::move(asset);
 }
 
 Engine::SpriteFramesAsset const *Engine::ContentManager::getAnimationAsset(std::string const &name) const
@@ -29,6 +34,15 @@ Engine::SoundAsset const *Engine::ContentManager::getSoundAsset(std::string cons
     return nullptr;
 }
 
+Engine::FontAsset const *Engine::ContentManager::getFontAsset(std::string const &name) const
+{
+    if (m_fontAssets.contains(name))
+    {
+        return m_fontAssets.at(name).get();
+    }
+    return nullptr;
+}
+
 sf::Texture *Engine::ContentManager::loadTexture(std::string const &path)
 {
     if (m_textures.contains(path))
@@ -42,9 +56,7 @@ sf::Texture *Engine::ContentManager::loadTexture(std::string const &path)
     }
     catch (sf::Exception e)
     {
-        std::cerr << e.what() << std::endl;
-        // TODO: Replace with better error handling system or even source engine style "missing texture"
-        exit(EXIT_FAILURE);
+        throw Errors::ContentError(e.what());
     }
 }
 
@@ -61,13 +73,39 @@ sf::SoundBuffer *Engine::ContentManager::loadSoundBuffer(std::string const &path
     }
     catch (sf::Exception e)
     {
-        std::cerr << e.what() << std::endl;
-        // TODO: Replace with better error handling system or even source engine style "fiddle sticks, what now"
-        exit(EXIT_FAILURE);
+        throw Errors::ContentError(e.what());
     }
 }
 
-std::unique_ptr<Engine::AnimatedSprite> Engine::ContentManager::loadSprite(SpriteFramesAsset const *asset)
+sf::Font *Engine::ContentManager::loadFont(std::string const &path)
+{
+    if (m_fonts.contains(path))
+    {
+        return m_fonts.at(path).get();
+    }
+    try
+    {
+        m_fonts[path] = std::make_unique<sf::Font>(path);
+        return m_fonts[path].get();
+    }
+    catch (sf::Exception e)
+    {
+        throw Errors::ContentError(e.what());
+    }
+}
+
+sf::Font *Engine::ContentManager::getFontByAssetName(std::string const &name)
+{
+    FontAsset const *asset = getFontAsset(name);
+    if (asset == nullptr)
+    {
+        throw Errors::ContentError("No font asset with name '" + name + "' found");
+    }
+
+    return loadFont(asset->getPath());
+}
+
+std::unique_ptr<Engine::AnimatedSprite> Engine::ContentManager::createSpriteFromAsset(SpriteFramesAsset const *asset)
 {
     if (asset == nullptr)
     {
@@ -77,7 +115,7 @@ std::unique_ptr<Engine::AnimatedSprite> Engine::ContentManager::loadSprite(Sprit
     return std::make_unique<AnimatedSprite>(sf::Sprite(*loadTexture(asset->getPath()), asset->getDefaultFrame()), asset);
 }
 
-std::unique_ptr<Engine::Sound> Engine::ContentManager::loadSound(SoundAsset const *asset)
+std::unique_ptr<Engine::Sound> Engine::ContentManager::createSoundFromAsset(SoundAsset const *asset)
 {
     if (asset == nullptr)
     {

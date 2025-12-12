@@ -15,11 +15,6 @@
 namespace Engine
 {
 
-    struct Function
-    {
-        size_t start;
-        size_t argumentCount;
-    };
     /// @brief Scene represents a collection of objects with it's own script, which loads requires assets and types for preset object
     class Scene
     {

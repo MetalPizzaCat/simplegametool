@@ -49,6 +49,7 @@ namespace Code
         GetSize,
         SetSize,
         AreOverlapping,
+        CreateLabel
     };
 
     enum class Keyword
@@ -119,6 +120,7 @@ namespace Code
         {"set_size", FusionInstruction::SetSize},
         {"are_overlapping", FusionInstruction::AreOverlapping},
         {"end", FusionInstruction::End},
+        {"create_label", FusionInstruction::CreateLabel},
     };
 
     std::string getFusionInstructionText(FusionInstruction instruction);
@@ -199,6 +201,7 @@ namespace Code
         {FusionInstruction::GetConst, FusionInstructionData{.instruction = Engine::Instructions::GetConst, .argumentTypes = {InstructionArgumentType::MethodName}}},
         {FusionInstruction::HasField, FusionInstructionData{.instruction = Engine::Instructions::HasField, .argumentTypes = {}}},
         {FusionInstruction::CreateSoundPlayer, FusionInstructionData{.instruction = Engine::Instructions::CreateSoundPlayer, .argumentTypes = {}}},
+        {FusionInstruction::CreateLabel, FusionInstructionData{.instruction = Engine::Instructions::CreateLabel, .argumentTypes = {}}},
         {FusionInstruction::PlaySound, FusionInstructionData{.instruction = Engine::Instructions::PlaySound, .argumentTypes = {}}},
         {FusionInstruction::GetSize, FusionInstructionData{.instruction = Engine::Instructions::GetSize, .argumentTypes = {}}},
         {FusionInstruction::SetSize, FusionInstructionData{.instruction = Engine::Instructions::SetSize, .argumentTypes = {}}},

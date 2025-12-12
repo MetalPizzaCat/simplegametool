@@ -1,7 +1,7 @@
 #include "GameObject.hpp"
 #include "../Scene.hpp"
 Engine::GameObject::GameObject(ObjectType const *type, std::string const &name, Scene &state)
-    : m_sprite(std::move(ContentManager::getInstance().loadSprite(type->getSpriteData()))), m_type(type), m_name(name), m_visible(true)
+    : m_sprite(std::move(ContentManager::getInstance().createSpriteFromAsset(type->getSpriteData()))), m_type(type), m_name(name), m_visible(true)
 {
     for (std::pair<std::string, Runnable::CodeConstantValue> const &val : type->getFields())
     {

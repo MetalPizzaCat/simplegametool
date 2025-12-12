@@ -2,6 +2,7 @@
 #include "../Error.hpp"
 #include <cmath>
 #include "../Object/AudioObject.hpp"
+#include "../Object/TextObject.hpp"
 #include "Random.hpp"
 void Engine::Standard::sqrt(Scene &scene)
 {
@@ -52,4 +53,44 @@ void Engine::Standard::Random::getRandomFloatInRange(Scene &scene)
     double max = scene.popFromStackAsType<double>("Expected max value on stack");
     double min = scene.popFromStackAsType<double>("Expected min value on stack");
     scene.pushToStack(Engine::Random::getInstance().getRandomFloatInRange(min, max));
+}
+
+void Engine::Standard::Label::setText(Scene &scene)
+{
+
+    if (TextObject *txt = dynamic_cast<TextObject *>(scene.popFromStackAsType<GameObject *>("Expected label on stack")); txt != nullptr)
+    {
+        std::string const &str = scene.popFromStackAsType<StringObject *>("Expected string on stack")->getString();
+        txt->setText(str);
+    }
+    else
+    {
+        throw Errors::RuntimeMemoryError("Expected label on stack but got wrong type");
+    }
+}
+
+void Engine::Standard::Label::getText(Scene &scene)
+{
+    if (TextObject *txt = dynamic_cast<TextObject *>(scene.popFromStackAsType<GameObject *>("Expected label on stack")); txt != nullptr)
+    {
+        scene.pushToStack(scene.createString(txt->getText()));
+    }
+    else
+    {
+        throw Errors::RuntimeMemoryError("Expected label on stack but got wrong type");
+    }
+}
+
+void Engine::Standard::Label::setFontSize(Scene &scene)
+{
+
+    if (TextObject *txt = dynamic_cast<TextObject *>(scene.popFromStackAsType<GameObject *>("Expected label on stack")); txt != nullptr)
+    {
+        IntType size = scene.popFromStackAsType<IntType>("Expected font size as int on stack");
+        txt->setFontSize(size);
+    }
+    else
+    {
+        throw Errors::RuntimeMemoryError("Expected label on stack but got wrong type");
+    }
 }

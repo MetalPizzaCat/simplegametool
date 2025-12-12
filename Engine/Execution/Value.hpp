@@ -6,18 +6,21 @@
 
 namespace Engine
 {
-    enum ValueType
+    enum ValueType 
     {
         Bool,
-        Int,
+        Integer,
         Float,
         Vector,
         Object,
         String,
     };
+    using IntType = int64_t;
+    using FloatType = double;
+    using VectorType = sf::Vector2f;
     class GameObject;
     class StringObject;
-    using Value = std::variant<bool, int64_t, double, sf::Vector2f, GameObject *, StringObject *>;
+    using Value = std::variant<bool, IntType, FloatType, VectorType, GameObject *, StringObject *>;
 
     std::string valueToString(Value const& v);
 

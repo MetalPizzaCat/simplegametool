@@ -45,3 +45,11 @@ Engine::Errors::ExecutionError::ExecutionError(std::string const &msg) : m_messa
 {
 }
 
+const char *Engine::Errors::ContentError::what() const throw()
+{
+    return m_message.c_str();
+}
+
+Engine::Errors::ContentError::ContentError(std::string const &msg) : m_message(msg)
+{
+}

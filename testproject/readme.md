@@ -1,1 +1,0 @@
-This is a very simple test project that will show examples of various features of the tool. Now however it's just test code.
