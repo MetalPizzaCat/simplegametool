@@ -171,7 +171,14 @@ std::pair<std::string, Engine::Runnable::RunnableFunction> Code::Fusion::FusionC
             switch ((Engine::Runnable::CodeConstantValueType)val.index())
             {
             case Engine::Runnable::CodeConstantValueType::Bool:
-                bytes.push_back((uint8_t)std::get<bool>(val));
+                if (std::get<bool>(val))
+                {
+                    bytes.push_back((uint8_t)Engine::Instructions::PushTrue);
+                }
+                else
+                {
+                    bytes.push_back((uint8_t)Engine::Instructions::PushFalse);
+                }
                 break;
             case Engine::Runnable::CodeConstantValueType::Int:
             {

@@ -1,0 +1,442 @@
+type Ball{
+    sprite = @ball
+
+    direction = (1.0, 1.0)
+
+    sound_player = 0
+
+    func init(self) {
+        # self.sound_player = create_sound_player("beep1", "ball_bounce")
+        get $self
+        push "ball_bounce"
+        push "hit"
+        create_sound_player
+        set_field sound_player
+
+        get $self
+        push 1.0
+        push -1.0
+        push 1.0
+        call_method_static Random::rand_range_float
+        make_vector
+        set_field direction
+    }
+
+    func bounce_off(self){
+        push "ball"
+        print
+        
+        get $self
+        get $self
+        get_field direction
+        get_y
+        get $self
+        get_field direction
+        get_x
+        push -1.0
+        mul
+        make_vector
+        set_field direction
+
+        get $self
+        get_field sound_player
+        call_method play
+    }
+
+    func update(self){
+        get $self
+        get_field sound_player
+
+        get $self
+        get_pos
+        
+        set_pos
+
+        # self.position += self.direction
+        get $self
+        get $self
+        get_pos
+        get $self
+        get_field direction
+        add
+        set_pos
+
+        # self.position.y > 0
+        get $self
+        get_pos
+        get_y
+        push 0.0
+        more
+    
+        jump_if %check_bottom
+        get $self
+        call_method bounce_vert
+
+        %check_bottom:
+        
+
+        get $self
+        get_pos
+        get_y
+        get $self
+        get_size
+        get_y
+        add
+        push 600.0
+        less
+        jump_if %check_left
+        get $self
+        call_method bounce_vert
+        %check_left:
+        
+    }
+
+    func bounce_vert(self){
+        # self.sound_player.play()
+
+        get $self
+        get_field sound_player
+        call_method play
+    
+        # self.direction = vec2(self.direction.x, -self.direction.y)
+        get $self
+        get $self
+        get_field direction
+        get_y
+        push -1.0
+        mul
+        get $self
+        get_field direction
+        get_x
+        make_vector
+        set_field direction
+    }
+
+    func reverse_dir_hor(self){
+        get $self
+        get $self
+        get_field direction
+        get_x
+        push -1.0
+        mul
+        get $self
+        get_field direction
+        get_y
+        make_vector
+        set_field direction
+    }
+}
+
+type Paddle{
+    sprite = @ball
+
+    func init(self){
+        get $self
+        push (16.0, 96.0)
+        set_size
+    }
+
+    func move_down(self){
+        get $self
+        get $self
+        get_pos
+        push (0, 5)
+        add
+        set_pos
+        get $self
+        call_method enforce_boundary
+    }
+
+    func move_up(self){
+        get $self
+        get $self
+        get_pos
+        push (0, -5)
+        add
+        set_pos
+        get $self
+        call_method enforce_boundary
+    }
+
+    func enforce_boundary(self){
+        vars lowest
+        
+        # to account for block size
+        push 600.0
+        get $self
+        get_size
+        get_y
+        sub
+        set $lowest
+
+        # lowest = screen.height - size.y 
+        get $self
+        get $self
+        get_pos
+        get_y
+
+        get $lowest
+
+        # self.position.y > lowest
+        less
+        jump_if %check_bottom
+        get $self
+
+        get $self
+        get_pos
+        get_x
+        get $lowest
+        make_vector
+        set_pos
+        end
+
+        %check_bottom:
+        get $self
+        get_pos
+        get_y
+        push 0.0
+        less
+
+        jump_if %fix_upper
+        end
+        %fix_upper:
+        get $self
+        
+        get $self
+        get_pos
+        get_x
+        push 0.0
+        make_vector
+        set_pos
+
+    }
+}
+
+func inc_player1_score{
+    get_global p1_score
+    push 1
+    add
+    set_global p1_score
+
+    
+    get_global p1_score
+    to_string
+    push "p1_score_label"
+    get_instance
+    call_method set_text 
+
+    get_global goal_snd
+    call_method play
+
+    call reset_ball
+}
+
+func reset_ball{
+    vars ball
+    push "ball"
+    get_instance
+    set $ball
+
+    get $ball
+    push (400, 300)
+    set_pos
+
+    get $ball
+    call_method reverse_dir_hor
+
+    push false
+    set_global ball_active
+}
+
+func inc_player2_score{
+    get_global p2_score
+    push 1
+    add
+    set_global p2_score
+
+    
+    get_global p2_score
+    to_string
+    push "p2_score_label"
+    get_instance
+    call_method set_text 
+
+    get_global goal_snd
+    call_method play
+    
+    call reset_ball
+
+}
+
+func init{
+    vars ball, left_paddle, right_paddle, p1_score_label, p2_score_label
+
+    push "goal_snd"
+    push "goal"
+    create_sound_player
+    set_global goal_snd
+
+    push 0
+    set_global p1_score
+
+    push 0
+    set_global p2_score
+    
+    push "p1_score_label"
+    push "dosfont"
+    create_label
+    set $p1_score_label
+
+    push "p2_score_label"
+    push "dosfont"
+    create_label
+    set $p2_score_label
+
+    
+    push "0"
+    get $p1_score_label
+    call_method set_text
+
+    get $p1_score_label
+    push (200, 60)
+    set_pos
+
+    push "0"
+    get $p2_score_label
+    call_method set_text
+
+    get $p2_score_label
+    push (600, 60)
+    set_pos
+
+
+    push "ball"
+    create_instance Ball
+    set $ball
+
+    get $ball
+    push (400, 300)
+    set_pos
+
+
+    push "p1"
+    create_instance Paddle
+    set $left_paddle
+
+    push "p2"
+    create_instance Paddle
+    set $right_paddle
+
+    get $left_paddle
+    push (48, 240)
+    set_pos
+
+    get $right_paddle
+    push (736, 240)
+    set_pos
+
+   
+}
+
+func check_ball_score_pos{
+    vars ball_x
+    push "ball"
+    get_instance
+    get_pos
+    get_x
+    set $ball_x
+
+    get $ball_x
+    push 0.0
+    more
+    jump_if %check_p2
+
+    call inc_player1_score
+    end
+    %check_p2:
+
+    get $ball_x
+    push 800.0
+    less 
+    jump_if %end
+    call inc_player2_score
+
+    %end:
+    end
+}
+
+func check_paddle_collision{
+    vars ball, p1, p2
+
+    push "ball"
+    get_instance 
+    set $ball
+
+    push "p1"
+    get_instance
+    set $p1
+
+    push "p2"
+    get_instance
+    set $p2
+
+    get $ball
+    get $p1
+    are_overlapping
+    not
+    jump_if %check_p2
+    get $ball
+    call_method bounce_off
+
+
+    %check_p2:
+    get $ball
+    get $p2
+    are_overlapping
+    not
+    jump_if %end
+    get $ball   
+    call_method bounce_off
+    %end:
+    
+}
+
+func update{
+    get_const Scancode::W
+    call_method_static Input::is_key_pressed
+    not
+    jump_if %check_p1_down
+    push "p1"
+    get_instance
+    call_method move_up
+    jump %check_p2
+    %check_p1_down:
+    get_const Scancode::S
+    call_method_static Input::is_key_pressed
+    not
+    jump_if %check_p2
+    push "p1"
+    get_instance
+    call_method move_down
+    %check_p2:
+
+    get_const Scancode::Up
+    call_method_static Input::is_key_pressed
+    not
+    jump_if %check_p2_down
+    push "p2"
+    get_instance
+    call_method move_up
+    %check_p2_down:
+    get_const Scancode::Down
+    call_method_static Input::is_key_pressed
+    not
+    jump_if %finish
+    push "p2"
+    get_instance
+    call_method move_down
+
+    %finish:
+    call check_paddle_collision
+    call check_ball_score_pos
+}

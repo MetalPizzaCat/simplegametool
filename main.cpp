@@ -58,7 +58,7 @@ int main(int, char **)
     using namespace Engine;
     try
     {
-        Project::Project p("./testproject");
+        Project::Project p("./examples/pong");
         p.loadAssetInfoIntoContentManager();
         std::string code = p.loadSceneCode(p.getMainScenePath());
 

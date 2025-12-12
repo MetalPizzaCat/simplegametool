@@ -1,0 +1,9 @@
+{
+    "name": "goal",
+    "type": "sound",
+    "file_path": "sounds/goal.ogg",
+    "pitch": 1.0,
+    "default_volume": 100,
+    "positional": false,
+    "looping": false
+}

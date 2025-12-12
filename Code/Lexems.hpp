@@ -49,7 +49,12 @@ namespace Code
         GetSize,
         SetSize,
         AreOverlapping,
-        CreateLabel
+        CreateLabel,
+        ToString,
+        ToInt,
+        ToFloat,
+        SetGlobal,
+        GetGlobal,
     };
 
     enum class Keyword
@@ -121,6 +126,11 @@ namespace Code
         {"are_overlapping", FusionInstruction::AreOverlapping},
         {"end", FusionInstruction::End},
         {"create_label", FusionInstruction::CreateLabel},
+        {"to_string", FusionInstruction::ToString},
+        {"to_int", FusionInstruction::ToInt},
+        {"to_float", FusionInstruction::ToFloat},
+        {"set_global", FusionInstruction::SetGlobal},
+        {"get_global", FusionInstruction::GetGlobal},
     };
 
     std::string getFusionInstructionText(FusionInstruction instruction);
@@ -207,5 +217,11 @@ namespace Code
         {FusionInstruction::SetSize, FusionInstructionData{.instruction = Engine::Instructions::SetSize, .argumentTypes = {}}},
         {FusionInstruction::AreOverlapping, FusionInstructionData{.instruction = Engine::Instructions::AreOverlapping, .argumentTypes = {}}},
         {FusionInstruction::Not, FusionInstructionData{.instruction = Engine::Instructions::Not, .argumentTypes = {}}},
+        {FusionInstruction::ToString, FusionInstructionData{.instruction = Engine::Instructions::ToString, .argumentTypes = {}}},
+        {FusionInstruction::ToInt, FusionInstructionData{.instruction = Engine::Instructions::ToInt, .argumentTypes = {}}},
+        {FusionInstruction::ToFloat, FusionInstructionData{.instruction = Engine::Instructions::ToFloat, .argumentTypes = {}}},
+        {FusionInstruction::GetGlobal, FusionInstructionData{.instruction = Engine::Instructions::GetGlobal, .argumentTypes = {InstructionArgumentType::FunctionName}}},
+        {FusionInstruction::SetGlobal, FusionInstructionData{.instruction = Engine::Instructions::SetGlobal, .argumentTypes = {InstructionArgumentType::FunctionName}}},
+
     };
 }

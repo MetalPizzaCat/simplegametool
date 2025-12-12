@@ -281,6 +281,16 @@ Engine::GameObject *Engine::Scene::getObjectByName(std::string const &name) cons
     return nullptr;
 }
 
+Engine::Value Engine::Scene::getGlobalVariable(std::string const &name) const
+{
+    if (m_globals.contains(name))
+    {
+        return m_globals.at(name);
+    }
+    throw Errors::RuntimeMemoryError("Unable to find scene variable named '" + name + "'");
+    return 0;
+}
+
 void Engine::Scene::collectGarbage()
 {
     for (int64_t i = m_memory.size() - 1; i >= 0; i--)
@@ -378,7 +388,16 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 pushToStack(sf::Vector2f(x, y));
             }
             break;
-
+            case Instructions::PushTrue:
+            {
+                pushToStack(true);
+            }
+            break;
+            case Instructions::PushFalse:
+            {
+                pushToStack(false);
+            }
+            break;
             case Instructions::SetLocal:
             {
                 size_t id = parseOperationConstant<size_t>(func.bytes.begin() + (pos + 1), func.bytes.end());
@@ -838,9 +857,99 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
             {
                 std::string const &assetName = popFromStackAsType<StringObject *>("Expected font name")->getString();
                 m_objects.push_back(std::make_unique<TextObject>(m_types[m_typeNames["Label"]].get(),
-                                                                  assetName,
-                                                                  popFromStackAsType<StringObject *>("Expected object name")->getString(), *this));
+                                                                 assetName,
+                                                                 popFromStackAsType<StringObject *>("Expected object name")->getString(), *this));
                 pushToStack(m_objects.back().get());
+            }
+            break;
+            case Instructions::ToString:
+            {
+                Value v = popFromStackOrError();
+                pushToStack(createString(valueToString(v)));
+            }
+            break;
+            case Instructions::ToInt:
+            {
+                Value v = popFromStackOrError();
+                switch (v.index())
+                {
+                case ValueType::Bool:
+                    pushToStack((IntType)std::get<bool>(v));
+                    break;
+                case ValueType::Integer:
+                    pushToStack(v);
+                    break;
+                case ValueType::Float:
+                    pushToStack((FloatType)std::get<FloatType>(v));
+                    break;
+                case ValueType::String:
+                    try
+                    {
+                        pushToStack(std::stol(std::get<StringObject *>(v)->getString()));
+                    }
+                    catch (std::out_of_range const &e)
+                    {
+                        error(debugInfo,
+                              pos,
+                              "Can not convert '" +
+                                  std::to_string(std::get<IntType>(v)) +
+                                  "' to int, value out of range of int, valid range is " +
+                                  std::to_string(std::numeric_limits<int64_t>::min()) +
+                                  "< x < " +
+                                  std::to_string(std::numeric_limits<int64_t>::max()));
+                    }
+                    break;
+                default:
+                    error(debugInfo, pos, std::string("Attempted to convert ") + typeToString((ValueType)v.index()) + " to integer");
+                }
+            }
+            break;
+            case Instructions::ToFloat:
+            {
+                Value v = popFromStackOrError();
+                switch (v.index())
+                {
+                case ValueType::Bool:
+                    pushToStack((FloatType)std::get<bool>(v));
+                    break;
+                case ValueType::Integer:
+                    pushToStack((FloatType)std::get<IntType>(v));
+                    break;
+                case ValueType::Float:
+                    pushToStack(std::get<FloatType>(v));
+                    break;
+                case ValueType::String:
+                    try
+                    {
+                        pushToStack(std::stod(std::get<StringObject *>(v)->getString()));
+                    }
+                    catch (std::out_of_range const &e)
+                    {
+                        error(debugInfo,
+                              pos,
+                              "Can not convert '" +
+                                  std::to_string(std::get<IntType>(v)) +
+                                  "' to int, value out of range of float, valid range is " +
+                                  std::to_string(std::numeric_limits<double>::min()) +
+                                  "< x < " +
+                                  std::to_string(std::numeric_limits<double>::max()));
+                    }
+                    break;
+                default:
+                    error(debugInfo, pos, std::string("Attempted to convert ") + typeToString((ValueType)v.index()) + " to float");
+                }
+            }
+            break;
+            case Instructions::SetGlobal:
+            {
+                std::string const &fieldName = parseByteOperandToString(pos, func.bytes);
+                setGlobalVariable(fieldName, popFromStackOrError());
+            }
+            break;
+            case Instructions::GetGlobal:
+            {
+                std::string const &fieldName = parseByteOperandToString(pos, func.bytes);
+                pushToStack(getGlobalVariable(fieldName));
             }
             break;
             default:

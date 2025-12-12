@@ -13,6 +13,8 @@ namespace Engine
         PushInt,
         PushFloat,
         PushVector,
+        PushTrue,
+        PushFalse,
         SetLocal,
         GetLocal,
         Add,
@@ -60,5 +62,10 @@ namespace Engine
         SetSize,
         AreOverlapping,
         CreateLabel,
+        ToString,
+        ToInt,
+        ToFloat,
+        SetGlobal,
+        GetGlobal,
     };
 }

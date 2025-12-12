@@ -179,11 +179,25 @@ namespace Engine
 
         GameObject *getObjectByName(std::string const &name) const;
 
+        /// @brief Get "global" variable by name or throw error if no variable uses that name. "Global" variable is still local to the scene
+        /// @param name Name of the variable
+        /// @return Value of the variable
+        Value getGlobalVariable(std::string const &name) const;
+
+        /// @brief Set "global" variable by name or throw error if no variable uses that name. "Global" variable is still local to the scene
+        /// @param name Name of the variable
+        /// @param v Value to set
+        inline void setGlobalVariable(std::string const &name, Value const &v)
+        {
+            m_globals[name] = v;
+        }
+
         void collectGarbage();
 
     private:
         std::vector<std::vector<Value>> m_operationStack = {{}};
         std::vector<std::vector<Value>> m_variables;
+        std::unordered_map<std::string, Value> m_globals;
         std::vector<std::string> m_strings;
         std::unordered_map<std::string, size_t> m_typeNames;
         std::vector<std::unique_ptr<ObjectType>> m_types;
