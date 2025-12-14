@@ -20,7 +20,7 @@ Project::Project::Project(std::string const &path)
     file >> json;
     int version = json.at("project_file_version");
     m_name = json.at("project_name");
-    m_mainScenePath = m_rootFolder + "/" + json.at("start_scene").get<std::string>();
+    m_mainScenePath = json.at("start_scene").get<std::string>();
     m_assetFolderPath = m_rootFolder + "/" + json.at("asset_folder").get<std::string>();
     if (json.contains("window_size"))
     {
@@ -81,11 +81,12 @@ void Project::Project::loadAsset(std::string const &path) const
 
 std::string Project::Project::loadSceneCode(std::string const &path) const
 {
-    if (!std::filesystem::exists(path) || !std::filesystem::is_regular_file(path))
+    std::string fullPath = m_rootFolder + "/" + path;
+    if (!std::filesystem::exists(fullPath) || !std::filesystem::is_regular_file(fullPath))
     {
-        throw Errors::AssetFileError("Unable to locate asset at '" + path + "'");
+        throw Errors::AssetFileError("Unable to locate asset at '" + fullPath + "'");
     }
-    std::ifstream t(path);
+    std::ifstream t(fullPath);
     std::stringstream buffer;
     buffer << t.rdbuf();
     return buffer.str();

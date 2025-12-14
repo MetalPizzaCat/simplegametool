@@ -55,6 +55,7 @@ namespace Code
         ToFloat,
         SetGlobal,
         GetGlobal,
+        ChangeScene
     };
 
     enum class Keyword
@@ -131,6 +132,7 @@ namespace Code
         {"to_float", FusionInstruction::ToFloat},
         {"set_global", FusionInstruction::SetGlobal},
         {"get_global", FusionInstruction::GetGlobal},
+        {"change_scene", FusionInstruction::ChangeScene}
     };
 
     std::string getFusionInstructionText(FusionInstruction instruction);
@@ -222,6 +224,7 @@ namespace Code
         {FusionInstruction::ToFloat, FusionInstructionData{.instruction = Engine::Instructions::ToFloat, .argumentTypes = {}}},
         {FusionInstruction::GetGlobal, FusionInstructionData{.instruction = Engine::Instructions::GetGlobal, .argumentTypes = {InstructionArgumentType::FunctionName}}},
         {FusionInstruction::SetGlobal, FusionInstructionData{.instruction = Engine::Instructions::SetGlobal, .argumentTypes = {InstructionArgumentType::FunctionName}}},
+        {FusionInstruction::ChangeScene, FusionInstructionData{.instruction = Engine::Instructions::ChangeScene, .argumentTypes = {}}},
 
     };
 }

@@ -19,7 +19,6 @@ namespace Engine
         /// @param pos Position
         virtual void setPosition(sf::Vector2f pos);
 
-        
         sf::Vector2f getPosition() const { return m_position; }
 
         /// @brief Set desired size of the object and scale the object sprite if present
@@ -33,8 +32,8 @@ namespace Engine
 
         std::string const &getName() const { return m_name; }
 
-        /// @brief Get current script type of the object 
-        /// @return Pointer to the type information 
+        /// @brief Get current script type of the object
+        /// @return Pointer to the type information
         ObjectType const *getType() const { return m_type; }
 
         /// @brief Check whether the given object contains a field with a given name

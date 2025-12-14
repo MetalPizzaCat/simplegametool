@@ -192,9 +192,18 @@ namespace Engine
             m_globals[name] = v;
         }
 
+        void changeScene(std::string const &targetScene);
+
+        void endScene();
+
+        bool isFinished() const { return m_quitting; }
+
+        std::optional<std::string> getNextScene() const { return m_nextScene; }
+
         void collectGarbage();
 
     private:
+        std::optional<std::string> m_nextScene;
         std::vector<std::vector<Value>> m_operationStack = {{}};
         std::vector<std::vector<Value>> m_variables;
         std::unordered_map<std::string, Value> m_globals;
@@ -208,5 +217,7 @@ namespace Engine
         std::vector<std::unique_ptr<MemoryObject>> m_memory;
 
         Code::Debug::DebugInfo m_debugInfo;
+
+        bool m_quitting = false;
     };
 }

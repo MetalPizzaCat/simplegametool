@@ -56,58 +56,72 @@ int main(int, char **)
 {
     using namespace Code;
     using namespace Engine;
+
+    sf::RenderWindow window = sf::RenderWindow(sf::VideoMode({800, 600}), "Loading...");
+
     try
     {
         Project::Project p("./examples/pong");
         p.loadAssetInfoIntoContentManager();
-        std::string code = p.loadSceneCode(p.getMainScenePath());
-
-        try
+        window.setSize(p.getWindowSize());
+        
+        std::optional<std::string> nextScene = p.getMainScenePath();
+        while (nextScene.has_value())
         {
-
-            Scene scene = loadSceneFromString(code);
-            auto window = sf::RenderWindow(sf::VideoMode(p.getWindowSize()), p.getName());
-
-            sf::Clock deltaClock;
-            window.setFramerateLimit(144);
-            scene.runFunctionByName("init");
-            while (window.isOpen())
+            // TODO: Make this changeable from game code
+            window.setTitle(nextScene.value());
+            std::string code = p.loadSceneCode(nextScene.value());
+            nextScene.reset();
+            try
             {
-                sf::Time deltaTime = deltaClock.restart();
-                while (const std::optional event = window.pollEvent())
+
+                Scene scene = loadSceneFromString(code);
+
+                sf::Clock deltaClock;
+                window.setFramerateLimit(144);
+                scene.runFunctionByName("init");
+                while (window.isOpen())
                 {
-                    if (event->is<sf::Event::Closed>())
+                    sf::Time deltaTime = deltaClock.restart();
+                    while (const std::optional event = window.pollEvent())
                     {
-                        window.close();
+                        if (event->is<sf::Event::Closed>())
+                        {
+                            window.close();
+                        }
+                        else if (const sf::Event::KeyPressed *keyPress = event->getIf<sf::Event::KeyPressed>())
+                        {
+                            scene.handleKeyboardPress(keyPress->scancode);
+                        }
+                        else if (const sf::Event::MouseMoved *mouseMove = event->getIf<sf::Event::MouseMoved>())
+                        {
+                            scene.handleMouseMove(sf::Vector2f(mouseMove->position.x, mouseMove->position.y));
+                        }
                     }
-                    else if (const sf::Event::KeyPressed *keyPress = event->getIf<sf::Event::KeyPressed>())
+                    scene.update(deltaTime.asSeconds());
+                    if (scene.isFinished())
                     {
-                        scene.handleKeyboardPress(keyPress->scancode);
+                        nextScene = scene.getNextScene();
+                        break;
                     }
-                    else if (const sf::Event::MouseMoved *mouseMove = event->getIf<sf::Event::MouseMoved>())
-                    {
-                        scene.handleMouseMove(sf::Vector2f(mouseMove->position.x, mouseMove->position.y));
-                    }
+                    window.clear();
+
+                    scene.draw(window);
+                    window.display();
                 }
-                scene.update(deltaTime.asSeconds());
-
-                window.clear();
-
-                scene.draw(window);
-                window.display();
             }
-        }
-        catch (Code::Errors::ParsingError e)
-        {
-            displayError(e.getColumn(), e.getLine(), code, e.what());
-        }
-        catch (Engine::Errors::InvalidInstructionError e)
-        {
-            displayError(0, 0, code, e.what());
-        }
-        catch (Engine::Errors::RuntimeError e)
-        {
-            displayError(e.getColumn(), e.getLine(), code, e.what());
+            catch (Code::Errors::ParsingError e)
+            {
+                displayError(e.getColumn(), e.getLine(), code, e.what());
+            }
+            catch (Engine::Errors::InvalidInstructionError e)
+            {
+                displayError(0, 0, code, e.what());
+            }
+            catch (Engine::Errors::RuntimeError e)
+            {
+                displayError(e.getColumn(), e.getLine(), code, e.what());
+            }
         }
     }
     catch (nlohmann::json::exception e)

@@ -61,6 +61,8 @@ add_executable(simplegametool main.cpp
     Engine/Content/Asset.cpp
     Engine/Content/ContentManager.hpp
     Engine/Content/ContentManager.cpp
+    Engine/Content/SceneDescriptor.hpp
+    Engine/Content/SceneDescriptor.cpp
 
     Engine/System/Random.hpp
     Engine/System/Random.cpp

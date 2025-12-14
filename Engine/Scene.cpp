@@ -291,6 +291,17 @@ Engine::Value Engine::Scene::getGlobalVariable(std::string const &name) const
     return 0;
 }
 
+void Engine::Scene::changeScene(std::string const &targetScene)
+{
+    m_nextScene = targetScene;
+    endScene();
+}
+
+void Engine::Scene::endScene()
+{
+    m_quitting = true;
+}
+
 void Engine::Scene::collectGarbage()
 {
     for (int64_t i = m_memory.size() - 1; i >= 0; i--)
@@ -323,7 +334,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
     {
         m_operationStack.push_back({});
         bool returning = false;
-        while (pos < func.bytes.size() && !returning)
+        while (pos < func.bytes.size() && !returning && !m_quitting)
         {
 
             // before you lies a giant switch case
@@ -950,6 +961,13 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
             {
                 std::string const &fieldName = parseByteOperandToString(pos, func.bytes);
                 pushToStack(getGlobalVariable(fieldName));
+            }
+            break;
+            case Instructions::ChangeScene:
+            {
+                std::string const &path = popFromStackAsType<StringObject *>("Expected path string on stack")->getString();
+                changeScene(path);
+                returning = true;
             }
             break;
             default:

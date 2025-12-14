@@ -67,5 +67,6 @@ namespace Engine
         ToFloat,
         SetGlobal,
         GetGlobal,
+        ChangeScene
     };
 }
