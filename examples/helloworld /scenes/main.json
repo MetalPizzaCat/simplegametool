@@ -1,0 +1,19 @@
+{
+    "title": "Hi!",
+    "code": "scenes/main.fus",
+    "objects": [
+        {
+            "type": "label",
+            "name": "label1",
+            "position": {
+                "x": 400,
+                "y": 300
+            },
+            "text": "Hello world!",
+            "font": "dosfont",
+            "properties": {
+                "val1": "example"
+            }
+        }
+    ]
+}

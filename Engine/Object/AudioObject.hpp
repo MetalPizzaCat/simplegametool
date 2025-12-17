@@ -8,7 +8,7 @@ namespace Engine
     class AudioObject : public GameObject
     {
     public:
-        explicit AudioObject(ObjectType const *type, std::string const &soundAssetName, std::string const &name, Scene &state);
+        explicit AudioObject(ObjectType const *type, std::string const &name, Scene &state, std::string const &soundAssetName);
 
         /// @brief Play audio sample
         void play();

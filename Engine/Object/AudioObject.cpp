@@ -1,10 +1,10 @@
 #include "AudioObject.hpp"
 
 Engine::AudioObject::AudioObject(ObjectType const *type,
-                                 std::string const &soundAssetName,
                                  std::string const &name,
-                                 Scene &state) : GameObject(type, name, state),
-                                                 m_sound(ContentManager::getInstance().createSoundFromAsset(ContentManager::getInstance().getSoundAsset(soundAssetName)))
+                                 Scene &state,
+                                 std::string const &soundAssetName) : GameObject(type, name, state),
+                                                                      m_sound(ContentManager::getInstance().createSoundFromAsset(ContentManager::getInstance().getSoundAsset(soundAssetName)))
 {
 }
 

@@ -11,6 +11,7 @@
 #include "../Code/CodeBuilder.hpp"
 #include "Object/MemoryObject.hpp"
 #include "Error.hpp"
+#include "Content/SceneDescriptor.hpp"
 
 namespace Engine
 {
@@ -22,6 +23,11 @@ namespace Engine
         /// @brief Create a new instance of scene object based on runnable code data
         /// @param code Code data to create from
         explicit Scene(Runnable::RunnableCode const &code);
+
+        /// @brief Create a new instance of the scene object based on runnable code data and populated with assets from scene description
+        /// @param scene Scene description containing data about manually placed objects
+        /// @param code Code to run and create data from
+        explicit Scene(SceneDescription const &scene, Runnable::RunnableCode const &code);
 
         /// @brief Update all objects present in the scene and run their user defined update functions
         /// @param delta
@@ -147,6 +153,26 @@ namespace Engine
             return std::get<T>(v);
         }
 
+        /// @brief Create object of given type and add it to the managed memory or throw error if object name already in use
+        /// @tparam T Object type
+        /// @tparam ...Args
+        /// @param scriptType Script type data for the object
+        /// @param name Name of the object
+        /// @param ...args All of the additional arguments to pass to the constructor of the object if needed
+        /// @return Pointer to the newly created object
+        template <class T, typename... Args>
+        T *createObject(ObjectType const *scriptType, std::string const &name, Args... args)
+        {
+            if (std::vector<std::unique_ptr<GameObject>>::const_iterator it = std::find_if(m_objects.begin(), m_objects.end(), [name](auto &obj)
+                                                                                           { return obj->getName() == name; });
+                it != m_objects.end())
+            {
+                throw Errors::RuntimeMemoryError("Tried to create object with name '" + name + "' but name is already in use");
+            }
+            m_objects.push_back(std::make_unique<T>(scriptType, name, *this, args...));
+            return (T *)m_objects.back().get();
+        }
+
         /// @brief Set value of the variable in the current block
         /// @param id Id of the variable(block will be resized to fit)
         /// @param val Value to assign
@@ -201,6 +227,11 @@ namespace Engine
         std::optional<std::string> getNextScene() const { return m_nextScene; }
 
         void collectGarbage();
+
+    protected:
+        /// @brief Populate current scene object with default types and types from compiled code
+        /// @param code
+        void populateTypeData(Runnable::RunnableCode const &code);
 
     private:
         std::optional<std::string> m_nextScene;

@@ -1,6 +1,6 @@
 {
     "project_file_version": 1,
-    "project_name": "example",
+    "project_name": "hello world example",
     "asset_folder": "assets/",
     "start_scene": "scenes/main.json",
     "window_size": {

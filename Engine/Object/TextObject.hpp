@@ -6,7 +6,7 @@ namespace Engine
     class TextObject : public GameObject
     {
     public:
-        explicit TextObject(ObjectType const *type, std::string const &fontName, std::string const &name, Scene &scene);
+        explicit TextObject(ObjectType const *type, std::string const &name, Scene &scene, std::string const &fontName);
 
         void draw(sf::RenderWindow &window) override;
 

@@ -20,6 +20,13 @@ Engine::Scene loadSceneFromString(std::string const &code)
     return Engine::Scene(sceneCode);
 }
 
+Engine::Scene loadScene(Engine::SceneDescription const &scene, std::string const &code)
+{
+    Engine::Runnable::RunnableCode sceneCode = Code::Fusion::compileFusionString(code);
+
+    return Engine::Scene(scene, sceneCode);
+}
+
 std::vector<std::string> getLines(std::string const &str)
 {
     std::stringstream ss(str);
@@ -64,18 +71,19 @@ int main(int, char **)
         Project::Project p("./examples/pong");
         p.loadAssetInfoIntoContentManager();
         window.setSize(p.getWindowSize());
-        
+
         std::optional<std::string> nextScene = p.getMainScenePath();
         while (nextScene.has_value())
         {
             // TODO: Make this changeable from game code
             window.setTitle(nextScene.value());
-            std::string code = p.loadSceneCode(nextScene.value());
+            SceneDescription sceneDesc = p.loadScene(nextScene.value());
+            std::string code = p.loadSceneCode(sceneDesc.getCodePath());
             nextScene.reset();
             try
             {
 
-                Scene scene = loadSceneFromString(code);
+                Scene scene = loadScene(sceneDesc, code);
 
                 sf::Clock deltaClock;
                 window.setFramerateLimit(144);

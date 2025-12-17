@@ -10,92 +10,51 @@
 
 Engine::Scene::Scene(Runnable::RunnableCode const &code) : m_strings(code.strings), m_functions(code.functions), m_debugInfo(code.debugInfo)
 {
-    // special type that will be used to represent standard library functions and constants
-    // should always exist as type 0, for sake of simplicity, every other "default" type will be added this way
-    addType("std", std::make_unique<ObjectType>(nullptr,
-                                                nullptr,
-                                                std::unordered_map<std::string, Runnable::CodeConstantValue>(),                         // fields
-                                                std::unordered_map<std::string, Runnable::CodeConstantValue>{{"pi", std::numbers::pi}}, // constants
-                                                std::unordered_map<std::string, Runnable::RunnableFunction>(),                          // methods
-                                                std::unordered_map<std::string, std::function<void(Scene & scene)>>{{"sqrt", Standard::sqrt}}));
+    populateTypeData(code);
+}
 
-    addType("Input", std::make_unique<ObjectType>(nullptr,
-                                                  nullptr,
-                                                  std::unordered_map<std::string, Runnable::CodeConstantValue>(), // fields
-                                                  std::unordered_map<std::string, Runnable::CodeConstantValue>{}, // constants
-                                                  std::unordered_map<std::string, Runnable::RunnableFunction>(),  // methods
-                                                  std::unordered_map<std::string, std::function<void(Scene & scene)>>{{"is_key_pressed", Standard::Input::isKeyPressed}}));
-
-    addType("Scancode", std::make_unique<ObjectType>(nullptr,
-                                                     nullptr,
-                                                     std::unordered_map<std::string, Runnable::CodeConstantValue>(), // fields
-                                                     Input::Scancodes,                                               // constants
-                                                     std::unordered_map<std::string, Runnable::RunnableFunction>(),  // methods
-                                                     std::unordered_map<std::string, std::function<void(Scene & scene)>>()));
-    addType("MouseButton", std::make_unique<ObjectType>(nullptr,
-                                                        nullptr,
-                                                        std::unordered_map<std::string, Runnable::CodeConstantValue>(), // fields
-                                                        Input::MouseButtons,                                            // constants
-                                                        std::unordered_map<std::string, Runnable::RunnableFunction>(),  // methods
-                                                        std::unordered_map<std::string, std::function<void(Scene & scene)>>()));
-
-    addType("AudioPlayer", std::make_unique<ObjectType>(nullptr,
-                                                        nullptr,
-                                                        std::unordered_map<std::string, Runnable::CodeConstantValue>(), // fields
-                                                        std::unordered_map<std::string, Runnable::CodeConstantValue>(), // constants
-                                                        std::unordered_map<std::string, Runnable::RunnableFunction>(),  // methods
-                                                        std::unordered_map<std::string, std::function<void(Scene & scene)>>{
-                                                            {"play", Standard::Audio::audioPlayerPlay}}));
-
-    addType("Audio", std::make_unique<ObjectType>(nullptr,
-                                                  nullptr,
-                                                  std::unordered_map<std::string, Runnable::CodeConstantValue>(), // fields
-                                                  std::unordered_map<std::string, Runnable::CodeConstantValue>(), // constants
-                                                  std::unordered_map<std::string, Runnable::RunnableFunction>(),  // methods
-                                                  std::unordered_map<std::string, std::function<void(Scene & scene)>>{
-                                                      {"set_listener_position", Standard::Audio::audioPlayerPlay}}));
-
-    addType("Random", std::make_unique<ObjectType>(nullptr,
-                                                   nullptr,
-                                                   std::unordered_map<std::string, Runnable::CodeConstantValue>(), // fields
-                                                   std::unordered_map<std::string, Runnable::CodeConstantValue>(), // constants
-                                                   std::unordered_map<std::string, Runnable::RunnableFunction>(),  // methods
-                                                   std::unordered_map<std::string, std::function<void(Scene & scene)>>{
-                                                       {"seed", Standard::Random::seed},
-                                                       {"rand_range_int", Standard::Random::getRandomIntInRange},
-                                                       {"rand_range_float", Standard::Random::getRandomFloatInRange}}));
-
-    addType("Label", std::make_unique<ObjectType>(nullptr,
-                                                  nullptr,
-                                                  std::unordered_map<std::string, Runnable::CodeConstantValue>(), // fields
-                                                  std::unordered_map<std::string, Runnable::CodeConstantValue>(), // constants
-                                                  std::unordered_map<std::string, Runnable::RunnableFunction>(),  // methods
-                                                  std::unordered_map<std::string, std::function<void(Scene & scene)>>{
-                                                      {"set_text", Standard::Label::setText},
-                                                      {"get_text", Standard::Label::getText},
-                                                      {"set_text_size", Standard::Label::setFontSize}}));
-    for (Runnable::TypeInfo const &type : code.types)
+Engine::Scene::Scene(SceneDescription const &scene, Runnable::RunnableCode const &code) : m_strings(code.strings), m_functions(code.functions), m_debugInfo(code.debugInfo)
+{
+    populateTypeData(code);
+    for (auto const &obj : scene.getObjects())
     {
-        if (type.isDefaultType())
+        GameObject *gameObj = nullptr;
+        if (SceneDescriptionAudioObject const *audio = dynamic_cast<SceneDescriptionAudioObject const *>(obj.get()); audio != nullptr)
         {
-            continue;
+            gameObj = createObject<AudioObject>(m_types[m_typeNames[obj->getTypeName()]].get(), obj->getName(), audio->getAudioName());
         }
-        SpriteFramesAsset const *asset = ContentManager::getInstance().getAnimationAsset(type.getSpriteName());
-        if (asset == nullptr)
+        else if (SceneDescriptionLabelObject const *labelData = dynamic_cast<SceneDescriptionLabelObject const *>(obj.get()); labelData != nullptr)
         {
-            if (code.typeDeclarationLocations.contains(type.getName()))
+            TextObject *label = createObject<TextObject>(m_types[m_typeNames[obj->getTypeName()]].get(), obj->getName(), labelData->getFontName());
+            label->setText(labelData->getText());
+            gameObj = label;
+        }
+        else
+        {
+            gameObj = createObject<GameObject>(m_types[m_typeNames[obj->getTypeName()]].get(), obj->getName());
+        }
+        gameObj->setPosition(obj->getStartPosition());
+        for (auto const &[name, val] : obj->getDefaultValues())
+        {
+            switch ((SceneDescriptionPropValueType)val.index())
             {
-                throw Errors::RuntimeError(
-                    code.typeDeclarationLocations.at(type.getName()).row,
-                    code.typeDeclarationLocations.at(type.getName()).column,
-                    "Type '" + type.getName() + "' uses nonexistant asset '" + type.getSpriteName() + "'");
-            }
-            else
-            {
-                throw Errors::ExecutionError("Type '" + type.getName() + "' uses nonexistant asset '" + type.getSpriteName() + "'");
+            case SceneDescriptionPropValueType::Bool:
+                gameObj->setFieldValue(name, std::get<bool>(val));
+                break;
+            case SceneDescriptionPropValueType::Int:
+                gameObj->setFieldValue(name, std::get<IntType>(val));
+                break;
+            case SceneDescriptionPropValueType::Float:
+                gameObj->setFieldValue(name, std::get<FloatType>(val));
+                break;
+            case SceneDescriptionPropValueType::String:
+                gameObj->setFieldValue(name, createString(std::get<std::string>(val)));
+                break;
+            case SceneDescriptionPropValueType::Vector:
+                gameObj->setFieldValue(name, std::get<VectorType>(val));
+                break;
             }
         }
-        addType(type.getName(), std::make_unique<ObjectType>(asset, type.getFields(), type.getConstants(), type.getMethods()));
     }
 }
 
@@ -313,10 +272,104 @@ void Engine::Scene::collectGarbage()
     }
 }
 
+void Engine::Scene::populateTypeData(Runnable::RunnableCode const &code)
+{
+    // special type that will be used to represent standard library functions and constants
+    // should always exist as type 0, for sake of simplicity, every other "default" type will be added this way
+    addType("std", std::make_unique<ObjectType>(nullptr,
+                                                nullptr,
+                                                std::unordered_map<std::string, Runnable::CodeConstantValue>(),                         // fields
+                                                std::unordered_map<std::string, Runnable::CodeConstantValue>{{"pi", std::numbers::pi}}, // constants
+                                                std::unordered_map<std::string, Runnable::RunnableFunction>(),                          // methods
+                                                std::unordered_map<std::string, std::function<void(Scene & scene)>>{{"sqrt", Standard::sqrt}}));
+
+    addType("Input", std::make_unique<ObjectType>(nullptr,
+                                                  nullptr,
+                                                  std::unordered_map<std::string, Runnable::CodeConstantValue>(), // fields
+                                                  std::unordered_map<std::string, Runnable::CodeConstantValue>{}, // constants
+                                                  std::unordered_map<std::string, Runnable::RunnableFunction>(),  // methods
+                                                  std::unordered_map<std::string, std::function<void(Scene & scene)>>{{"is_key_pressed", Standard::Input::isKeyPressed}}));
+
+    addType("Scancode", std::make_unique<ObjectType>(nullptr,
+                                                     nullptr,
+                                                     std::unordered_map<std::string, Runnable::CodeConstantValue>(), // fields
+                                                     Input::Scancodes,                                               // constants
+                                                     std::unordered_map<std::string, Runnable::RunnableFunction>(),  // methods
+                                                     std::unordered_map<std::string, std::function<void(Scene & scene)>>()));
+    addType("MouseButton", std::make_unique<ObjectType>(nullptr,
+                                                        nullptr,
+                                                        std::unordered_map<std::string, Runnable::CodeConstantValue>(), // fields
+                                                        Input::MouseButtons,                                            // constants
+                                                        std::unordered_map<std::string, Runnable::RunnableFunction>(),  // methods
+                                                        std::unordered_map<std::string, std::function<void(Scene & scene)>>()));
+
+    addType("AudioPlayer", std::make_unique<ObjectType>(nullptr,
+                                                        nullptr,
+                                                        std::unordered_map<std::string, Runnable::CodeConstantValue>(), // fields
+                                                        std::unordered_map<std::string, Runnable::CodeConstantValue>(), // constants
+                                                        std::unordered_map<std::string, Runnable::RunnableFunction>(),  // methods
+                                                        std::unordered_map<std::string, std::function<void(Scene & scene)>>{
+                                                            {"play", Standard::Audio::audioPlayerPlay}}));
+
+    addType("Audio", std::make_unique<ObjectType>(nullptr,
+                                                  nullptr,
+                                                  std::unordered_map<std::string, Runnable::CodeConstantValue>(), // fields
+                                                  std::unordered_map<std::string, Runnable::CodeConstantValue>(), // constants
+                                                  std::unordered_map<std::string, Runnable::RunnableFunction>(),  // methods
+                                                  std::unordered_map<std::string, std::function<void(Scene & scene)>>{
+                                                      {"set_listener_position", Standard::Audio::audioPlayerPlay}}));
+
+    addType("Random", std::make_unique<ObjectType>(nullptr,
+                                                   nullptr,
+                                                   std::unordered_map<std::string, Runnable::CodeConstantValue>(), // fields
+                                                   std::unordered_map<std::string, Runnable::CodeConstantValue>(), // constants
+                                                   std::unordered_map<std::string, Runnable::RunnableFunction>(),  // methods
+                                                   std::unordered_map<std::string, std::function<void(Scene & scene)>>{
+                                                       {"seed", Standard::Random::seed},
+                                                       {"rand_range_int", Standard::Random::getRandomIntInRange},
+                                                       {"rand_range_float", Standard::Random::getRandomFloatInRange}}));
+
+    addType("Label", std::make_unique<ObjectType>(nullptr,
+                                                  nullptr,
+                                                  std::unordered_map<std::string, Runnable::CodeConstantValue>(), // fields
+                                                  std::unordered_map<std::string, Runnable::CodeConstantValue>(), // constants
+                                                  std::unordered_map<std::string, Runnable::RunnableFunction>(),  // methods
+                                                  std::unordered_map<std::string, std::function<void(Scene & scene)>>{
+                                                      {"set_text", Standard::Label::setText},
+                                                      {"get_text", Standard::Label::getText},
+                                                      {"set_text_size", Standard::Label::setFontSize}}));
+    for (Runnable::TypeInfo const &type : code.types)
+    {
+        if (type.isDefaultType())
+        {
+            continue;
+        }
+        SpriteFramesAsset const *asset = ContentManager::getInstance().getAnimationAsset(type.getSpriteName());
+        if (asset == nullptr)
+        {
+            if (code.typeDeclarationLocations.contains(type.getName()))
+            {
+                throw Errors::RuntimeError(
+                    code.typeDeclarationLocations.at(type.getName()).row,
+                    code.typeDeclarationLocations.at(type.getName()).column,
+                    "Type '" + type.getName() + "' uses nonexistant asset '" + type.getSpriteName() + "'");
+            }
+            else
+            {
+                throw Errors::ExecutionError("Type '" + type.getName() + "' uses nonexistant asset '" + type.getSpriteName() + "'");
+            }
+        }
+        addType(type.getName(), std::make_unique<ObjectType>(asset, type.getFields(), type.getConstants(), type.getMethods()));
+    }
+}
+
 void Engine::Scene::runFunctionByName(std::string const &name)
 {
-    Runnable::RunnableFunction const &func = m_functions.at(name);
-    runFunction(func, Runnable::RunnableFunctionDebugInfo((size_t)-1, name));
+    if (m_functions.contains(name))
+    {
+        Runnable::RunnableFunction const &func = m_functions.at(name);
+        runFunction(func, Runnable::RunnableFunctionDebugInfo((size_t)-1, name));
+    }
 }
 
 void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::optional<Runnable::RunnableFunctionDebugInfo> const &debugInfo)
@@ -357,8 +410,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 std::string const &name = popFromStackAsType<StringObject *>("Expected string for object name")->getString();
                 size_t typeId = parseOperationConstant<int64_t>(func.bytes.begin() + (pos + 1), func.bytes.end());
                 pos += sizeof(size_t);
-                m_objects.push_back(std::make_unique<GameObject>(m_types[typeId].get(), name, *this));
-                GameObject *inst = m_objects.back().get();
+                GameObject *inst = createObject<GameObject>(m_types[typeId].get(), name);
                 if (m_objects.back()->getType()->hasMethod("init"))
                 {
                     pushToStack(inst);
@@ -835,10 +887,8 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
             case Instructions::CreateSoundPlayer:
             {
                 std::string const &assetName = popFromStackAsType<StringObject *>("Expected audio asset name")->getString();
-                m_objects.push_back(std::make_unique<AudioObject>(m_types[m_typeNames["AudioPlayer"]].get(),
-                                                                  assetName,
-                                                                  popFromStackAsType<StringObject *>("Expected object name")->getString(), *this));
-                pushToStack(m_objects.back().get());
+                pushToStack(createObject<AudioObject>(m_types[m_typeNames["AudioPlayer"]].get(),
+                                                      popFromStackAsType<StringObject *>("Expected object name")->getString(), assetName));
             }
             break;
             case Instructions::PlaySound:
@@ -867,10 +917,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
             case Instructions::CreateLabel:
             {
                 std::string const &assetName = popFromStackAsType<StringObject *>("Expected font name")->getString();
-                m_objects.push_back(std::make_unique<TextObject>(m_types[m_typeNames["Label"]].get(),
-                                                                 assetName,
-                                                                 popFromStackAsType<StringObject *>("Expected object name")->getString(), *this));
-                pushToStack(m_objects.back().get());
+                pushToStack(createObject<TextObject>(m_types[m_typeNames["Label"]].get(), popFromStackAsType<StringObject *>("Expected object name")->getString(), assetName));
             }
             break;
             case Instructions::ToString:

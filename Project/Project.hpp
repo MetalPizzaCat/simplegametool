@@ -4,6 +4,7 @@
 #include <nlohmann/json.hpp>
 #include <SFML/System.hpp>
 #include "../Engine/Content/Asset.hpp"
+#include "../Engine/Content/SceneDescriptor.hpp"
 
 namespace Project
 {
@@ -25,7 +26,10 @@ namespace Project
 
         std::string loadSceneCode(std::string const &path) const;
 
+        Engine::SceneDescription loadScene(std::string const& path) const;
+
         sf::Vector2u getWindowSize() const { return m_windowSize; }
+
 
     protected:
         std::unique_ptr<Engine::SpriteFramesAsset> loadSpriteFramesAsset(nlohmann::json &json) const;

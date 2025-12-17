@@ -6,6 +6,7 @@
 #include <sstream>
 #include "Errors.hpp"
 #include "../Engine/Content/ContentManager.hpp"
+#include "../Engine/Execution/Value.hpp"
 
 Project::Project::Project(std::string const &path)
 {
@@ -90,6 +91,95 @@ std::string Project::Project::loadSceneCode(std::string const &path) const
     std::stringstream buffer;
     buffer << t.rdbuf();
     return buffer.str();
+}
+
+Engine::SceneDescription Project::Project::loadScene(std::string const &path) const
+{
+    if (!std::filesystem::exists(m_rootFolder + "/" + path))
+    {
+        throw Errors::AssetFileError("Unable to locate scene at '" + path + "'");
+    }
+    try
+    {
+        std::ifstream file(m_rootFolder + "/" + path);
+        nlohmann::json json;
+        file >> json;
+        std::optional<std::string> title;
+        if (json.contains("name"))
+        {
+            title = json.at("name").get<std::string>();
+        }
+        std::string code = json.at("code");
+
+        std::vector<std::unique_ptr<Engine::SceneDescriptionObject>> objects;
+        if (json.contains("objects"))
+        {
+            for (nlohmann::json const &obj : json.at("objects"))
+            {
+                std::string type = obj.at("type");
+                std::optional<sf::Vector2f> startSize = {};
+                if (obj.contains("size"))
+                {
+                    startSize = sf::Vector2f(obj.at("size").at("x").get<float>(), obj.at("size").at("y").get<float>());
+                }
+                sf::Vector2f startPos(obj.at("position").at("x").get<float>(), obj.at("position").at("y").get<float>());
+                std::map<std::string, Engine::SceneDescriptionPropertyValue> props;
+                if (obj.contains("properties"))
+                {
+                    for (auto const &[key, value] : obj.at("properties").items())
+                    {
+                        if (value.is_boolean())
+                        {
+                            props[key] = value.get<bool>();
+                        }
+                        else if (value.is_number_float())
+                        {
+                            props[key] = (Engine::FloatType)value.get<float>();
+                        }
+                        else if (value.is_number_integer())
+                        {
+                            props[key] = (Engine::IntType)value.get<int32_t>();
+                        }
+                        else if (value.is_string())
+                        {
+                            props[key] = value.get<std::string>();
+                        }
+                        else if (value.is_object())
+                        {
+                            props[key] = sf::Vector2f(value.at("x").get<float>(), value.at("y").get<float>());
+                        }
+                    }
+                }
+                if (type == "audio")
+                {
+                    objects.push_back(std::make_unique<Engine::SceneDescriptionAudioObject>(obj.at("name").get<std::string>(),
+                                                                                            obj.at("audio_name").get<std::string>(),
+                                                                                            sf::Vector2f(obj.at("position").at("x").get<float>(), obj.at("position").at("y").get<float>()),
+                                                                                            startSize, props));
+                }
+                else if (type == "label")
+                {
+                    objects.push_back(std::make_unique<Engine::SceneDescriptionLabelObject>(obj.at("name").get<std::string>(),
+                                                                                            obj.at("text").get<std::string>(),
+                                                                                            obj.at("font").get<std::string>(),
+                                                                                            sf::Vector2f(obj.at("position").at("x").get<float>(), obj.at("position").at("y").get<float>()),
+                                                                                            startSize, props));
+                }
+                else
+                {
+                    objects.push_back(std::make_unique<Engine::SceneDescriptionObject>(obj.at("name").get<std::string>(),
+                                                                                       type,
+                                                                                       sf::Vector2f(obj.at("position").at("x").get<float>(), obj.at("position").at("y").get<float>()),
+                                                                                       startSize, props));
+                }
+            }
+        }
+        return Engine::SceneDescription(json.at("code").get<std::string>(), std::move(objects));
+    }
+    catch (nlohmann::json::exception e)
+    {
+        throw Errors::AssetFileError("Error in file '" + path + "': " + e.what());
+    }
 }
 
 std::unique_ptr<Engine::SpriteFramesAsset> Project::Project::loadSpriteFramesAsset(nlohmann::json &json) const

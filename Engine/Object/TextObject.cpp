@@ -1,6 +1,6 @@
 #include "TextObject.hpp"
 
-Engine::TextObject::TextObject(ObjectType const *type, std::string const &fontName, std::string const &name, Scene &scene)
+Engine::TextObject::TextObject(ObjectType const *type, std::string const &name, Scene &scene, std::string const &fontName)
     : GameObject(type, name, scene), m_text(*ContentManager::getInstance().getFontByAssetName(fontName))
 {
 }
