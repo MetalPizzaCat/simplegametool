@@ -67,7 +67,7 @@ void Engine::Scene::update(float delta)
         {
             runMethod(obj.get(), "update");
         }
-        if (obj->hasAnimationJustFinished())
+        if (obj->hasAnimationJustFinished() && !obj->isDestroyed())
         {
             obj->setAnimationJustFinished(false);
             if (obj->getType()->hasMethod("on_animation_ended"))
@@ -80,6 +80,17 @@ void Engine::Scene::update(float delta)
     {
         runFunctionByName("update");
     }
+
+    for (int64_t i = m_objects.size() - 1; i >= 0; i--)
+    {
+        // to destroy objects we have to make sure they are marked as destroyed
+        // and not referenced
+        if (m_objects[i]->isDestroyed() && m_objects[i]->isDead())
+        {
+            m_objects.erase(m_objects.begin() + i);
+        }
+    }
+    collectGarbage();
 }
 
 void Engine::Scene::draw(sf::RenderWindow &window)
@@ -157,10 +168,18 @@ void Engine::Scene::setVariableValue(size_t id, Value const &val)
     std::vector<Value> &frame = m_variables.back();
     if (id >= frame.size())
     {
-        frame.resize(id + 1);
+        // this should give us enough space
+        // fill it with nil values
+        frame.resize(id + 1, NilType());
     }
-    // TODO: handle ref counting for assigning/overwriting values
+    else
+    {
+        // if we didn't have to resize that means we might have already used the slot
+        // so to prepare to override we mark the object in it as unused
+        decreaseValueRefCount(frame[id]);
+    }
     frame[id] = val;
+    increaseValueRefCount(val);
 }
 
 std::optional<Engine::Value> Engine::Scene::getVariableValue(size_t id) const
@@ -179,6 +198,11 @@ void Engine::Scene::createVariableBlock()
 
 void Engine::Scene::popVariableBlock()
 {
+    // once variable block is free the values should also be freed
+    for (Value const &v : m_variables.back())
+    {
+        decreaseValueRefCount(v);
+    }
     m_variables.pop_back();
 }
 
@@ -726,13 +750,13 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 {
                     pushToStack(std::get<int64_t>(a) > std::get<int64_t>(b));
                 }
-                if (a.index() == ValueType::Float)
+                else if (a.index() == ValueType::Float)
                 {
                     pushToStack(std::get<double>(a) > std::get<double>(b));
                 }
                 else
                 {
-                    error(debugInfo, pos, "Attempted to perform comparison on incompatible types");
+                    error(debugInfo, pos, "Attempted to perform comparison on invalid type");
                 }
             }
             break;
@@ -753,7 +777,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 {
                     pushToStack(std::get<int64_t>(a) < std::get<int64_t>(b));
                 }
-                if (a.index() == ValueType::Float)
+                else if (a.index() == ValueType::Float)
                 {
                     pushToStack(std::get<double>(a) < std::get<double>(b));
                 }
@@ -931,6 +955,9 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 Value v = popFromStackOrError();
                 switch (v.index())
                 {
+                case ValueType::Nil:
+                    pushToStack(0);
+                    break;
                 case ValueType::Bool:
                     pushToStack((IntType)std::get<bool>(v));
                     break;
@@ -967,6 +994,9 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 Value v = popFromStackOrError();
                 switch (v.index())
                 {
+                case ValueType::Nil:
+                    pushToStack(0.f);
+                    break;
                 case ValueType::Bool:
                     pushToStack((FloatType)std::get<bool>(v));
                     break;
@@ -1017,8 +1047,46 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 returning = true;
             }
             break;
+            case Instructions::Destroy:
+            {
+                GameObject *obj = popFromStackAsType<GameObject *>("Expected game object on stack");
+                // for user to decide if any other objects should be destroyed. For example, objects stored in fields
+                if (obj->getType()->hasMethod("on_destroy"))
+                {
+                    pushToStack(obj);
+                    obj->getType()->callNativeMethod("on_destroy", *this);
+                }
+                obj->destroy();
+            }
+            break;
+            case Instructions::Append:
+            {
+                Value v = popFromStackOrError();
+                if (v.index() == ValueType::String)
+                {
+                    pushToStack(createString(std::get<StringObject *>(v)->getString() + popFromStackAsType<StringObject *>("Expected string on stack")->getString()));
+                }
+                else
+                {
+                    error(debugInfo, pos, "Expected array or string on stack for append operation ");
+                }
+            }
+            break;
+            case Instructions::Length:
+            {
+                Value v = popFromStackOrError();
+                if (v.index() == ValueType::String)
+                {
+                    pushToStack((IntType)std::get<StringObject *>(v)->getString().length());
+                }
+                else
+                {
+                    error(debugInfo, pos, "Expected array or string on stack for length operation ");
+                }
+            }
+            break;
             default:
-                throw Errors::InvalidInstructionError(std::string("Unknown instruction with value ") + std::to_string(func.bytes.at(pos)), pos);
+                error(debugInfo, pos, std::string("Unknown instruction with value ") + std::to_string(func.bytes.at(pos)));
             }
 
             pos++;

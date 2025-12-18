@@ -1,14 +1,15 @@
 #pragma once
 
 #include "ObjectType.hpp"
+#include "MemoryObject.hpp"
 #include "../Content/ContentManager.hpp"
 #include "../Content/AnimatedSprite.hpp"
 
 namespace Engine
 {
     class Scene;
-    /// @brief Object representing anything that participates in the game
-    class GameObject
+    /// @brief Object representing anything that participates in the game and has visuals or sounds attached to it.
+    class GameObject : public MemoryObject
     {
     public:
         explicit GameObject(ObjectType const *type, std::string const &name, Scene &state);
@@ -57,6 +58,14 @@ namespace Engine
 
         void setAnimationJustFinished(bool has) { m_hasAnimationJustFinished = has; }
 
+        /// @brief Mark object as ready to be destroyed. This does not instantly clear the memory used by the object to avoid accessing invalid data,
+        /// but it will put in the state where it is not rendered and not updated and attempting to call functions on it will throw errors
+        void destroy();
+
+        bool isDestroyed() const { return m_destroyed; }
+
+        std::string toString() const override { return std::string("Object@") + getName(); }
+
         virtual ~GameObject() = default;
 
     protected:
@@ -69,6 +78,7 @@ namespace Engine
         sf::Vector2f m_position;
         sf::Vector2f m_size;
         bool m_visible;
+        bool m_destroyed;
         std::unordered_map<std::string, Value> m_fields;
         bool m_hasAnimationJustFinished = false;
     };

@@ -1,11 +1,14 @@
 #include "Value.hpp"
 #include "../Object/GameObject.hpp"
 #include "../Object/MemoryObject.hpp"
+#include "../Object/ArrayObject.hpp"
 
 std::string Engine::valueToString(Value const &v)
 {
     switch (v.index())
     {
+    case ValueType::Nil:
+        return "Nil";
     case ValueType::Bool:
         return std::string(std::get<bool>(v) ? "true" : "false");
     case ValueType::Integer:
@@ -17,7 +20,9 @@ std::string Engine::valueToString(Value const &v)
     case ValueType::Object:
         return std::string("Object@") + std::get<GameObject *>(v)->getName();
     case ValueType::String:
-        return std::get<StringObject *>(v)->getString();
+        return std::get<StringObject *>(v)->toString();
+    case ValueType::Array:
+        return std::get<ArrayObject *>(v)->toString();
     }
     return "INVALID DATA TYPE";
 }
@@ -26,6 +31,8 @@ const char *Engine::typeToString(ValueType type)
 {
     switch (type)
     {
+    case ValueType::Nil:
+        return "Nil";
     case ValueType::Bool:
         return "Bool";
     case ValueType::Integer:
@@ -38,6 +45,40 @@ const char *Engine::typeToString(ValueType type)
         return "Object";
     case ValueType::String:
         return "String";
+    case ValueType::Array:
+        return "Array";
     }
     return "INVALID DATA TYPE";
+}
+
+void Engine::increaseValueRefCount(Value const &v)
+{
+    if (v.index() == ValueType::String)
+    {
+        std::get<StringObject *>(v)->increaseRefCounter();
+    }
+    if (v.index() == ValueType::Object)
+    {
+        std::get<GameObject *>(v)->increaseRefCounter();
+    }
+    else if (v.index() == ValueType::Array)
+    {
+        std::get<ArrayObject *>(v)->increaseRefCounter();
+    }
+}
+
+void Engine::decreaseValueRefCount(Value const &v)
+{
+    if (v.index() == ValueType::String)
+    {
+        std::get<StringObject *>(v)->decreaseRefCounter();
+    }
+    if (v.index() == ValueType::Object)
+    {
+        std::get<GameObject *>(v)->decreaseRefCounter();
+    }
+    else if (v.index() == ValueType::Array)
+    {
+        std::get<ArrayObject *>(v)->decreaseRefCounter();
+    }
 }

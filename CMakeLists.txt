@@ -40,12 +40,16 @@ add_executable(simplegametool main.cpp
 
     Engine/Object/GameObject.hpp
     Engine/Object/GameObject.cpp
+    Engine/Object/MemoryObject.hpp
+    Engine/Object/MemoryObject.cpp
     Engine/Object/ObjectType.hpp
     Engine/Object/ObjectType.cpp
     Engine/Object/TextObject.hpp
     Engine/Object/TextObject.cpp
     Engine/Object/AudioObject.hpp
     Engine/Object/AudioObject.cpp
+    Engine/Object/ArrayObject.hpp
+    Engine/Object/ArrayObject.cpp
 
     Engine/Execution/Instructions.hpp
     Engine/Execution/Value.hpp
@@ -73,7 +77,7 @@ add_executable(simplegametool main.cpp
     Engine/Scene.cpp
     Engine/Error.hpp
     Engine/Error.cpp
-    
+
     Project/Project.hpp
     Project/Project.cpp
     Project/Errors.hpp

@@ -1,7 +1,8 @@
 #include "GameObject.hpp"
+#include "ArrayObject.hpp"
 #include "../Scene.hpp"
 Engine::GameObject::GameObject(ObjectType const *type, std::string const &name, Scene &state)
-    : m_sprite(std::move(ContentManager::getInstance().createSpriteFromAsset(type->getSpriteData()))), m_type(type), m_name(name), m_visible(true)
+    : m_sprite(std::move(ContentManager::getInstance().createSpriteFromAsset(type->getSpriteData()))), m_type(type), m_name(name), m_visible(true), m_destroyed(false)
 {
     for (std::pair<std::string, Runnable::CodeConstantValue> const &val : type->getFields())
     {
@@ -40,7 +41,7 @@ Engine::GameObject::GameObject(ObjectType const *type, std::string const &name, 
 
 void Engine::GameObject::draw(sf::RenderWindow &window)
 {
-    if (m_visible)
+    if (m_visible && !m_destroyed)
     {
         if (m_sprite != nullptr)
         {
@@ -66,7 +67,7 @@ void Engine::GameObject::setSize(sf::Vector2f size)
 
 void Engine::GameObject::update(float delta)
 {
-    if (m_sprite != nullptr)
+    if (m_sprite != nullptr && !m_destroyed)
     {
         m_sprite->update(delta);
     }
@@ -83,7 +84,21 @@ std::optional<Engine::Value> Engine::GameObject::getFieldValue(std::string const
 
 void Engine::GameObject::setFieldValue(std::string const &name, Value const &val)
 {
+    if (m_fields.contains(name))
+    {
+        decreaseValueRefCount(val);
+    }
     m_fields[name] = val;
+    increaseValueRefCount(val);
+}
+
+void Engine::GameObject::destroy()
+{
+    m_destroyed = true;
+    for (auto &[name, val] : m_fields)
+    {
+        decreaseValueRefCount(val);
+    }
 }
 
 void Engine::GameObject::spriteAnimationFinishedCallback()

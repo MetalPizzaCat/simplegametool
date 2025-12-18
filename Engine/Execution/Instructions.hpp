@@ -44,13 +44,13 @@ namespace Engine
         LessOrEquals,
         // Call method of a given type by name
         CallMethod,
-        // Call method of a given type by name, without passing "self" to method 
+        // Call method of a given type by name, without passing "self" to method
         CallMethodStatic,
         // Call function of a scene
         CallFunction,
         // Exit function without returning a value
         ExitFunction,
-        // Return value from a function and  exit 
+        // Return value from a function and  exit
         Return,
         GetField,
         SetField,
@@ -67,6 +67,9 @@ namespace Engine
         ToFloat,
         SetGlobal,
         GetGlobal,
-        ChangeScene
+        ChangeScene,
+        Destroy,
+        Append,
+        Length,
     };
 }

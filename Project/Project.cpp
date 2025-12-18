@@ -41,8 +41,11 @@ void Project::Project::loadAssetInfoIntoContentManager()
     }
     for (std::filesystem::directory_entry const &entry : std::filesystem::directory_iterator(m_assetFolderPath))
     {
-        std::cout << "Loading '" << entry.path() << "'" << std::endl;
-        loadAsset(entry.path().string());
+        if (entry.path().extension() == ".json")
+        {
+            std::cout << "Loading '" << entry.path() << "'" << std::endl;
+            loadAsset(entry.path().string());
+        }
     }
 }
 
@@ -105,9 +108,9 @@ Engine::SceneDescription Project::Project::loadScene(std::string const &path) co
         nlohmann::json json;
         file >> json;
         std::optional<std::string> title;
-        if (json.contains("name"))
+        if (json.contains("title"))
         {
-            title = json.at("name").get<std::string>();
+            title = json.at("title").get<std::string>();
         }
         std::string code = json.at("code");
 
@@ -174,7 +177,7 @@ Engine::SceneDescription Project::Project::loadScene(std::string const &path) co
                 }
             }
         }
-        return Engine::SceneDescription(json.at("code").get<std::string>(), std::move(objects));
+        return Engine::SceneDescription(json.at("code").get<std::string>(), title, std::move(objects));
     }
     catch (nlohmann::json::exception e)
     {

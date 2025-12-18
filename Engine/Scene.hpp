@@ -242,7 +242,7 @@ namespace Engine
         std::unordered_map<std::string, size_t> m_typeNames;
         std::vector<std::unique_ptr<ObjectType>> m_types;
         std::unordered_map<std::string, Runnable::RunnableFunction> m_functions;
-        /// @brief Various game objects that have various game logic
+        /// @brief Various game objects that have various game logic. Exists separate from other memory objects as they are controlled by player and exist "globally"
         std::vector<std::unique_ptr<GameObject>> m_objects;
         /// @brief List of all memory tracked objects such as strings and arrays
         std::vector<std::unique_ptr<MemoryObject>> m_memory;

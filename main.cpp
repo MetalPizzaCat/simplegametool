@@ -59,7 +59,7 @@ void displayError(size_t column, size_t row, std::string const &code, std::strin
     std::cerr << std::endl;
 }
 
-int main(int, char **)
+int runByPath(std::string const &path)
 {
     using namespace Code;
     using namespace Engine;
@@ -68,7 +68,7 @@ int main(int, char **)
 
     try
     {
-        Project::Project p("./examples/pong");
+        Project::Project p(path);
         p.loadAssetInfoIntoContentManager();
         window.setSize(p.getWindowSize());
 
@@ -76,9 +76,17 @@ int main(int, char **)
         while (nextScene.has_value())
         {
             // TODO: Make this changeable from game code
-            window.setTitle(nextScene.value());
+
             SceneDescription sceneDesc = p.loadScene(nextScene.value());
             std::string code = p.loadSceneCode(sceneDesc.getCodePath());
+            if (sceneDesc.getTitle().has_value())
+            {
+                window.setTitle(sceneDesc.getTitle().value());
+            }
+            else
+            {
+                window.setTitle(nextScene.value());
+            }
             nextScene.reset();
             try
             {
@@ -137,4 +145,10 @@ int main(int, char **)
         std::cerr << "Failed to load project data " << e.what() << std::endl;
         return EXIT_FAILURE;
     }
+    return EXIT_SUCCESS;
+}
+
+int main(int, char **)
+{
+    return runByPath("./examples/shooter");
 }

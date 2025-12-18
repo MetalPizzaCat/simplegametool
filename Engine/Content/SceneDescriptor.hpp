@@ -81,15 +81,18 @@ namespace Engine
     class SceneDescription
     {
     public:
-        explicit SceneDescription(std::string const &codePath, std::vector<std::unique_ptr<SceneDescriptionObject>> objects);
+        explicit SceneDescription(std::string const &codePath, std::optional<std::string> title, std::vector<std::unique_ptr<SceneDescriptionObject>> objects);
 
         std::string const &getCodePath() const { return m_codePath; }
+
+        std::optional<std::string> getTitle() const { return m_title; }
 
         std::vector<std::unique_ptr<SceneDescriptionObject>> const &getObjects() const;
 
     private:
         std::vector<std::unique_ptr<SceneDescriptionObject>> m_objects;
 
+        std::optional<std::string> m_title;
         std::string m_codePath;
     };
 } // namespace Engine

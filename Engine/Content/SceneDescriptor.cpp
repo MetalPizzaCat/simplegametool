@@ -21,8 +21,10 @@ Engine::SceneDescriptionAudioObject::SceneDescriptionAudioObject(std::string con
 {
 }
 
-Engine::SceneDescription::SceneDescription(std::string const &codePath, std::vector<std::unique_ptr<SceneDescriptionObject>> objects)
-    : m_codePath(codePath), m_objects(std::move(objects))
+Engine::SceneDescription::SceneDescription(std::string const &codePath,
+                                           std::optional<std::string> title,
+                                           std::vector<std::unique_ptr<SceneDescriptionObject>> objects)
+    : m_codePath(codePath), m_title(title), m_objects(std::move(objects))
 {
 }
 
@@ -37,6 +39,6 @@ Engine::SceneDescriptionLabelObject::SceneDescriptionLabelObject(std::string con
                                                                  sf::Vector2f startPos,
                                                                  std::optional<sf::Vector2f> startSize,
                                                                  std::map<std::string, SceneDescriptionPropertyValue> const &props)
-    : SceneDescriptionObject(name, "AudioPlayer", startPos, startSize, props), m_text(text), m_font(fontName)
+    : SceneDescriptionObject(name, "Label", startPos, startSize, props), m_text(text), m_font(fontName)
 {
 }

@@ -55,7 +55,10 @@ namespace Code
         ToFloat,
         SetGlobal,
         GetGlobal,
-        ChangeScene
+        ChangeScene,
+        Destroy,
+        Append,
+        Length,
     };
 
     enum class Keyword
@@ -132,7 +135,10 @@ namespace Code
         {"to_float", FusionInstruction::ToFloat},
         {"set_global", FusionInstruction::SetGlobal},
         {"get_global", FusionInstruction::GetGlobal},
-        {"change_scene", FusionInstruction::ChangeScene}
+        {"change_scene", FusionInstruction::ChangeScene},
+        {"destroy", FusionInstruction::Destroy},
+        {"append", FusionInstruction::Append},
+        {"len", FusionInstruction::Length},
     };
 
     std::string getFusionInstructionText(FusionInstruction instruction);
@@ -225,6 +231,8 @@ namespace Code
         {FusionInstruction::GetGlobal, FusionInstructionData{.instruction = Engine::Instructions::GetGlobal, .argumentTypes = {InstructionArgumentType::FunctionName}}},
         {FusionInstruction::SetGlobal, FusionInstructionData{.instruction = Engine::Instructions::SetGlobal, .argumentTypes = {InstructionArgumentType::FunctionName}}},
         {FusionInstruction::ChangeScene, FusionInstructionData{.instruction = Engine::Instructions::ChangeScene, .argumentTypes = {}}},
-
+        {FusionInstruction::Destroy, FusionInstructionData{.instruction = Engine::Instructions::Destroy, .argumentTypes = {}}},
+        {FusionInstruction::Append, FusionInstructionData{.instruction = Engine::Instructions::Append, .argumentTypes = {}}},
+        {FusionInstruction::Length, FusionInstructionData{.instruction = Engine::Instructions::Length, .argumentTypes = {}}},
     };
 }
