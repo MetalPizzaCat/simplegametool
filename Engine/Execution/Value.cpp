@@ -18,7 +18,15 @@ std::string Engine::valueToString(Value const &v)
     case ValueType::Vector:
         return std::string("(") + std::to_string(std::get<sf::Vector2f>(v).x) + "," + std::to_string(std::get<sf::Vector2f>(v).y) + ")";
     case ValueType::Object:
+    {
+        GameObject *o = std::get<GameObject *>(v);
+        if (o->isDestroyed())
+        {
+            return "Freed object";
+        }
         return std::string("Object@") + std::get<GameObject *>(v)->getName();
+    }
+
     case ValueType::String:
         return std::get<StringObject *>(v)->toString();
     case ValueType::Array:

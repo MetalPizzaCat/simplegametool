@@ -5,6 +5,7 @@
 #include "System/Input.hpp"
 #include "System/Random.hpp"
 #include "Object/TextObject.hpp"
+#include "Object/ArrayObject.hpp"
 
 #include <numbers>
 
@@ -62,6 +63,10 @@ void Engine::Scene::update(float delta)
 {
     for (auto const &obj : m_objects)
     {
+        if (obj->isDestroyed())
+        {
+            continue;
+        }
         obj->update(delta);
         if (obj->getType()->hasMethod("update"))
         {
@@ -129,6 +134,12 @@ Engine::StringObject *Engine::Scene::createString(std::string const &str)
 {
     m_memory.push_back(std::make_unique<StringObject>(str));
     return (Engine::StringObject *)m_memory.back().get();
+}
+
+Engine::ArrayObject *Engine::Scene::createArray(std::vector<Value> const &values)
+{
+    m_memory.push_back(std::make_unique<ArrayObject>(values));
+    return (Engine::ArrayObject *)m_memory.back().get();
 }
 
 std::string const &Engine::Scene::getConstantStringById(size_t id) const
@@ -272,6 +283,16 @@ Engine::Value Engine::Scene::getGlobalVariable(std::string const &name) const
     }
     throw Errors::RuntimeMemoryError("Unable to find scene variable named '" + name + "'");
     return 0;
+}
+
+void Engine::Scene::setGlobalVariable(std::string const &name, Value const &v)
+{
+    if (m_globals.contains(name))
+    {
+        decreaseValueRefCount(v);
+    }
+    m_globals[name] = v;
+    increaseValueRefCount(v);
 }
 
 void Engine::Scene::changeScene(std::string const &targetScene)
@@ -1059,12 +1080,31 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 obj->destroy();
             }
             break;
+            case Instructions::IsDestroyed:
+            {
+                Value v = popFromStackOrError();
+                if (v.index() == ValueType::Object)
+                {
+                    pushToStack(std::get<GameObject *>(v)->isDestroyed());
+                }
+                else
+                {
+                    pushToStack(false);
+                }
+            }
+            break;
             case Instructions::Append:
             {
                 Value v = popFromStackOrError();
                 if (v.index() == ValueType::String)
                 {
                     pushToStack(createString(std::get<StringObject *>(v)->getString() + popFromStackAsType<StringObject *>("Expected string on stack")->getString()));
+                }
+                else if (v.index() == ValueType::Array)
+                {
+                    ArrayObject *arr = createArray(popFromStackAsType<ArrayObject *>("Expected array on stack")->getItems());
+                    arr->appendItem(v);
+                    pushToStack(arr);
                 }
                 else
                 {
@@ -1079,9 +1119,69 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 {
                     pushToStack((IntType)std::get<StringObject *>(v)->getString().length());
                 }
+                else if (v.index() == ValueType::Array)
+                {
+                    pushToStack((IntType)std::get<ArrayObject *>(v)->getLength());
+                }
                 else
                 {
                     error(debugInfo, pos, "Expected array or string on stack for length operation ");
+                }
+            }
+            break;
+            case Instructions::CreateArray:
+            {
+                IntType arraySize = parseOperationConstant<IntType>(func.bytes.begin() + (pos + 1), func.bytes.end());
+                pos += sizeof(IntType);
+                std::vector<Value> items;
+                for (IntType i = 0; i < arraySize; i++)
+                {
+                    items.push_back(popFromStackOrError());
+                }
+                pushToStack(createArray(items));
+            }
+            break;
+            case Instructions::GetItem:
+            {
+                Value v = popFromStackOrError();
+                IntType index = popFromStackAsType<IntType>("Expected index on stack");
+                if (v.index() == ValueType::String)
+                {
+                    // TODO: Maybe add char type?
+                    pushToStack((IntType)std::get<StringObject *>(v)->getString().at(index));
+                }
+                else if (v.index() == ValueType::Array)
+                {
+                    pushToStack(std::get<ArrayObject *>(v)->getItem(index));
+                }
+                else
+                {
+                    error(debugInfo, pos, "Attempted to access item in a non-list type");
+                }
+            }
+            break;
+            case Instructions::SetItem:
+            {
+
+                Value v = popFromStackOrError();
+                IntType index = popFromStackAsType<IntType>("Expected index on stack");
+                Value item = popFromStackOrError();
+                if (v.index() == ValueType::String)
+                {
+                    if (v.index() != ValueType::Integer)
+                    {
+                        error(debugInfo, pos, "Only integer type can be assigned as character value in the string");
+                    }
+                    // TODO: Maybe add char type? Or use python approach of 1 sized string
+                    std::get<StringObject *>(v)->getString()[index] = (char)std::get<IntType>(v);
+                }
+                else if (v.index() == ValueType::Array)
+                {
+                    std::get<ArrayObject *>(v)->setItem(index, item);
+                }
+                else
+                {
+                    error(debugInfo, pos, "Attempted to access item in a non-list type");
                 }
             }
             break;
@@ -1104,4 +1204,21 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
     collectGarbage();
     m_operationStack.pop_back();
     popVariableBlock();
+}
+
+template <>
+Engine::GameObject *Engine::Scene::popFromStackAsType(std::string const &errorMessage)
+{
+    if (m_operationStack.empty() || m_operationStack.back().empty())
+    {
+        throw Errors::RuntimeMemoryError("Can not pop from stack because stack is empty");
+    }
+    if (!std::holds_alternative<GameObject *>(m_operationStack.back().back()))
+    {
+        throw Errors::RuntimeMemoryError(errorMessage);
+    }
+    GameObject *v = std::get<GameObject *>(m_operationStack.back().back());
+    m_operationStack.back().pop_back();
+    validateObject(v);
+    return v;
 }

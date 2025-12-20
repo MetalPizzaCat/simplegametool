@@ -94,14 +94,26 @@ void Engine::GameObject::setFieldValue(std::string const &name, Value const &val
 
 void Engine::GameObject::destroy()
 {
+    // we don't need sprite anymore
+    m_sprite.reset();
     m_destroyed = true;
     for (auto &[name, val] : m_fields)
     {
         decreaseValueRefCount(val);
     }
+    // object is destroyed we can feel safer clearing memory
+    m_fields.clear();
 }
 
 void Engine::GameObject::spriteAnimationFinishedCallback()
 {
     m_hasAnimationJustFinished = true;
+}
+
+void Engine::validateObject(Engine::GameObject const *obj)
+{
+    if (obj->isDestroyed())
+    {
+        throw Engine::Errors::RuntimeMemoryError("Attempted to access destroyed object's data");
+    }
 }

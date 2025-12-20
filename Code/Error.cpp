@@ -21,3 +21,4 @@ const char *Code::Errors::MultipleTypeDefinitionError::what() const throw()
 Code::Errors::MultipleTypeDefinitionError::MultipleTypeDefinitionError(std::string const &msg) : m_message(msg)
 {
 }
+

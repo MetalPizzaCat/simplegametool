@@ -66,4 +66,5 @@ namespace Engine::Errors
         std::string m_message;
         size_t m_pos;
     };
+
 }

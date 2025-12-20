@@ -1,0 +1,11 @@
+{
+    "name": "ball",
+    "type": "animation",
+    "file_path": "assets/ball.png",
+    "default_rect": {
+        "x": 0,
+        "y": 0,
+        "w": 16,
+        "h": 16
+    }
+}

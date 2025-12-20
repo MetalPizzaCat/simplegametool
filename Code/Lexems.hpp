@@ -57,8 +57,12 @@ namespace Code
         GetGlobal,
         ChangeScene,
         Destroy,
+        IsDestroyed,
         Append,
         Length,
+        CreateArray,
+        GetItem,
+        SetItem,
     };
 
     enum class Keyword
@@ -137,8 +141,12 @@ namespace Code
         {"get_global", FusionInstruction::GetGlobal},
         {"change_scene", FusionInstruction::ChangeScene},
         {"destroy", FusionInstruction::Destroy},
+        {"is_destroyed", FusionInstruction::IsDestroyed},
         {"append", FusionInstruction::Append},
         {"len", FusionInstruction::Length},
+        {"create_array", FusionInstruction::CreateArray},
+        {"get_item", FusionInstruction::GetItem},
+        {"set_item", FusionInstruction::SetItem},
     };
 
     std::string getFusionInstructionText(FusionInstruction instruction);
@@ -232,7 +240,11 @@ namespace Code
         {FusionInstruction::SetGlobal, FusionInstructionData{.instruction = Engine::Instructions::SetGlobal, .argumentTypes = {InstructionArgumentType::FunctionName}}},
         {FusionInstruction::ChangeScene, FusionInstructionData{.instruction = Engine::Instructions::ChangeScene, .argumentTypes = {}}},
         {FusionInstruction::Destroy, FusionInstructionData{.instruction = Engine::Instructions::Destroy, .argumentTypes = {}}},
+        {FusionInstruction::IsDestroyed, FusionInstructionData{.instruction = Engine::Instructions::IsDestroyed, .argumentTypes = {}}},
         {FusionInstruction::Append, FusionInstructionData{.instruction = Engine::Instructions::Append, .argumentTypes = {}}},
         {FusionInstruction::Length, FusionInstructionData{.instruction = Engine::Instructions::Length, .argumentTypes = {}}},
+        {FusionInstruction::CreateArray, FusionInstructionData{.instruction = Engine::Instructions::CreateArray, .argumentTypes = {InstructionArgumentType::Int}}},
+        {FusionInstruction::GetItem, FusionInstructionData{.instruction = Engine::Instructions::GetItem, .argumentTypes = {}}},
+        {FusionInstruction::SetItem, FusionInstructionData{.instruction = Engine::Instructions::SetItem, .argumentTypes = {}}},
     };
 }

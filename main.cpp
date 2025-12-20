@@ -150,5 +150,5 @@ int runByPath(std::string const &path)
 
 int main(int, char **)
 {
-    return runByPath("./examples/shooter");
+    return runByPath("./examples/defender");
 }

@@ -1,0 +1,46 @@
+{
+    "title": "Shooter example",
+    "code": "scenes/main.fus",
+    "objects": [
+        {
+            "name": "tick_counter",
+            "type": "label",
+            "text": "0",
+            "font": "dosfont",
+            "position": {
+                "x": 300,
+                "y": 300
+            }
+        },
+        {
+            "name": "tick_counter_label",
+            "type": "label",
+            "text": "ticks: ",
+            "font": "dosfont",
+            "position": {
+                "x": 200,
+                "y": 300
+            }
+        },
+        {
+            "name": "id_counter",
+            "type": "label",
+            "text": "0",
+            "font": "dosfont",
+            "position": {
+                "x": 300,
+                "y": 400
+            }
+        },
+        {
+            "name": "id_counter_label",
+            "type": "label",
+            "text": "bullets: ",
+            "font": "dosfont",
+            "position": {
+                "x": 150,
+                "y": 400
+            }
+        }
+    ]
+}

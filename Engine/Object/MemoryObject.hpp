@@ -35,7 +35,7 @@ namespace Engine
     public:
         explicit StringObject(std::string const &str) : m_string(str) {}
 
-        std::string const &getString() const { return m_string; }
+        std::string &getString() { return m_string; }
 
         std::string toString() const override { return m_string; }
 

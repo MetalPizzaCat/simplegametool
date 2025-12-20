@@ -6,13 +6,6 @@
 #include "Random.hpp"
 
 // TODO: Replace with better globally available system
-void validateObject(Engine::GameObject const *obj)
-{
-    if (obj->isDestroyed())
-    {
-        throw Engine::Errors::RuntimeMemoryError("Attempted to access destroyed object's data");
-    }
-}
 
 void Engine::Standard::sqrt(Scene &scene)
 {
@@ -28,7 +21,7 @@ void Engine::Standard::Audio::audioPlayerPlay(Scene &scene)
 {
     if (Engine::AudioObject *audio = dynamic_cast<Engine::AudioObject *>(scene.popFromStackAsType<GameObject *>("Expected audio object")); audio != nullptr)
     {
-        validateObject(audio);
+        Engine::validateObject(audio);
         audio->play();
     }
 }
@@ -70,7 +63,7 @@ void Engine::Standard::Label::setText(Scene &scene)
 
     if (TextObject *txt = dynamic_cast<TextObject *>(scene.popFromStackAsType<GameObject *>("Expected label on stack")); txt != nullptr)
     {
-        validateObject(txt);
+
         std::string const &str = scene.popFromStackAsType<StringObject *>("Expected string on stack")->getString();
         txt->setText(str);
     }
@@ -84,7 +77,7 @@ void Engine::Standard::Label::getText(Scene &scene)
 {
     if (TextObject *txt = dynamic_cast<TextObject *>(scene.popFromStackAsType<GameObject *>("Expected label on stack")); txt != nullptr)
     {
-        validateObject(txt);
+
         scene.pushToStack(scene.createString(txt->getText()));
     }
     else
@@ -98,7 +91,7 @@ void Engine::Standard::Label::setFontSize(Scene &scene)
 
     if (TextObject *txt = dynamic_cast<TextObject *>(scene.popFromStackAsType<GameObject *>("Expected label on stack")); txt != nullptr)
     {
-        validateObject(txt);
+
         IntType size = scene.popFromStackAsType<IntType>("Expected font size as int on stack");
         txt->setFontSize(size);
     }

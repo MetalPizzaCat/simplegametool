@@ -1,0 +1,95 @@
+type Bullet{
+    sprite = @ball
+    lifetime = 0
+    func init(self){
+        get $self
+        print
+
+        get $self
+        get_field lifetime
+        print
+
+    }
+    func update(self){
+        get $self
+        get $self
+        get_pos
+        push (1, 0)
+        add
+        set_pos
+        
+        get $self
+        get $self
+        get_field lifetime
+        push 1
+        add
+        set_field lifetime
+        
+        get $self
+        get_field lifetime
+        push 500
+        less
+        jump_if %end
+
+        get $self
+        destroy
+        %end:
+        end
+    }
+}
+
+func init{
+
+    push 69
+    set 10
+    push 0
+    set_global timer
+    push 0
+    set_global bullet_id
+}
+
+func update {
+    get_global timer
+    push 1
+    add
+    set_global timer
+
+   
+    get_global timer
+    to_string
+    push "tick_counter"
+    get_instance
+    call_method set_text
+
+
+    get_global timer
+    push 300
+    less
+    jump_if %end
+
+    
+
+    push "b"
+    get_global bullet_id
+    to_string
+    push 0
+    set_global timer
+    append
+
+    create_instance Bullet 
+    
+
+    get_global bullet_id
+    push 1
+    add
+    set_global bullet_id
+
+    get_global bullet_id
+    to_string
+    push "id_counter"
+    get_instance
+    call_method set_text
+
+    %end:
+    end
+}

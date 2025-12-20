@@ -1,0 +1,10 @@
+{
+    "project_file_version": 1,
+    "project_name": "shooter",
+    "asset_folder": "assets/",
+    "start_scene": "scenes/main.json",
+    "window_size": {
+        "w": 600,
+        "h": 600
+    }
+}

@@ -106,6 +106,11 @@ namespace Engine
         /// @return Pointer to the managed string object
         StringObject *createString(std::string const &str);
 
+        /// @brief Create a new managed array instance and store it in the memory list
+        /// @param values Values to populate array with
+        /// @return Pointer to the managed array object
+        ArrayObject *createArray(std::vector<Value> const &values);
+
         /// @brief Parse next `sizeof(T)` bytes into a T value using bitshifts and reinterpret cast
         /// @tparam T Type of the value to convert into
         /// @param start Where in the byte code to start from
@@ -140,7 +145,7 @@ namespace Engine
         template <class T>
         T popFromStackAsType(std::string const &errorMessage)
         {
-            if (m_operationStack.empty())
+            if (m_operationStack.empty() || m_operationStack.back().empty())
             {
                 throw Errors::RuntimeMemoryError("Can not pop from stack because stack is empty");
             }
@@ -213,10 +218,7 @@ namespace Engine
         /// @brief Set "global" variable by name or throw error if no variable uses that name. "Global" variable is still local to the scene
         /// @param name Name of the variable
         /// @param v Value to set
-        inline void setGlobalVariable(std::string const &name, Value const &v)
-        {
-            m_globals[name] = v;
-        }
+        void setGlobalVariable(std::string const &name, Value const &v);
 
         void changeScene(std::string const &targetScene);
 
@@ -251,4 +253,7 @@ namespace Engine
 
         bool m_quitting = false;
     };
+
+    template <>
+    GameObject *Scene::popFromStackAsType(std::string const &errorMessage);
 }

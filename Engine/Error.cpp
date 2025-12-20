@@ -53,3 +53,4 @@ const char *Engine::Errors::ContentError::what() const throw()
 Engine::Errors::ContentError::ContentError(std::string const &msg) : m_message(msg)
 {
 }
+

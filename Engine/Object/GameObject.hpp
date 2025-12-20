@@ -82,4 +82,8 @@ namespace Engine
         std::unordered_map<std::string, Value> m_fields;
         bool m_hasAnimationJustFinished = false;
     };
+
+    /// @brief Check if given object has been destroyed and throw an error if it was
+    /// @param obj  Object to check
+    void validateObject(GameObject const *obj);
 }

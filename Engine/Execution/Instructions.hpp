@@ -69,7 +69,11 @@ namespace Engine
         GetGlobal,
         ChangeScene,
         Destroy,
+        IsDestroyed,
         Append,
         Length,
+        CreateArray,
+        GetItem,
+        SetItem,
     };
 }
