@@ -144,6 +144,14 @@ Engine::ArrayObject *Engine::Scene::createArray(std::vector<Value> const &values
 
 std::string const &Engine::Scene::getConstantStringById(size_t id) const
 {
+    if (!m_executedTypes.empty())
+    {
+        if (!m_executedTypes.back()->hasStringAt(id))
+        {
+            throw Errors::RuntimeMemoryError("Unable to find string constant with id " + std::to_string(id) + " in current class");
+        }
+        return m_executedTypes.back()->getStringAt(id);
+    }
     if (id >= m_strings.size())
     {
         throw Errors::RuntimeMemoryError("Unable to find string constant with id " + std::to_string(id));
@@ -404,7 +412,13 @@ void Engine::Scene::populateTypeData(Runnable::RunnableCode const &code)
                 throw Errors::ExecutionError("Type '" + type.getName() + "' uses nonexistant asset '" + type.getSpriteName() + "'");
             }
         }
-        addType(type.getName(), std::make_unique<ObjectType>(asset, type.getFields(), type.getConstants(), type.getMethods()));
+        addType(type.getName(), std::make_unique<ObjectType>(asset,
+                                                             nullptr,
+                                                             type.getFields(),
+                                                             type.getConstants(),
+                                                             type.getMethods(),
+                                                             std::unordered_map<std::string, std::function<void(Scene & scene)>>{},
+                                                             type.getStrings()));
     }
 }
 
@@ -447,7 +461,8 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
             {
                 size_t typeId = parseOperationConstant<int64_t>(func.bytes.begin() + (pos + 1), func.bytes.end());
                 pos += sizeof(size_t);
-                m_operationStack.back().push_back(createString(getConstantStringById(typeId)));
+                StringObject *a = createString(getConstantStringById(typeId));
+                m_operationStack.back().push_back(a);
             }
             break;
             case Instructions::CreateInstance:
@@ -459,7 +474,8 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 if (m_objects.back()->getType()->hasMethod("init"))
                 {
                     pushToStack(inst);
-                    runFunction(m_objects.back()->getType()->getMethod("init"), Runnable::RunnableFunctionDebugInfo(typeId, "init"));
+                    runMethod(m_objects.back().get(), "init");
+                    // runFunction(m_objects.back()->getType()->getMethod("init"), Runnable::RunnableFunctionDebugInfo(typeId, "init"));
                 }
 
                 pushToStack(inst);

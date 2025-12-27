@@ -67,6 +67,7 @@ void Code::Fusion::FusionCodeGenerator::parseTypeDeclaration()
     consumeEndOfStatement();
     std::unordered_map<std::string, CodeConstantValue> fields;
     std::unordered_map<std::string, CodeConstantValue> constants;
+    m_builder.createStringBlock();
 
     while (isOfType<IdToken>() || isKeyword(Keyword::Const))
     {
@@ -103,7 +104,7 @@ void Code::Fusion::FusionCodeGenerator::parseTypeDeclaration()
 
     // times likes this is when i miss how rust handles errors, but alas i can't be bothered to fight borrow checker
     // we check fot this twice because default types don't have debug file location, because they are not in any file
-    if (m_builder.addType(TypeInfo(name->getId(), spriteName->getAssetName(), fields, constants, methods, false)) == (size_t)-1)
+    if (m_builder.addType(TypeInfo(name->getId(), spriteName->getAssetName(), fields, constants, methods, m_builder.popStringBlock(), false)) == (size_t)-1)
     {
         throw Errors::ParsingError(name->getRow(), name->getColumn(), "Type with name '" + name->getId() + "' already exists");
     }

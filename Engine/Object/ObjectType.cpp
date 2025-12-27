@@ -1,13 +1,5 @@
 #include "ObjectType.hpp"
 #include "../Scene.hpp"
-Engine::ObjectType::ObjectType(SpriteFramesAsset const *sprite,
-                               std::unordered_map<std::string, Engine::Runnable::CodeConstantValue> const &fields,
-                               std::unordered_map<std::string, Runnable::CodeConstantValue> const &constants,
-
-                               std::unordered_map<std::string, Runnable::RunnableFunction> const &methods)
-    : m_sprite(sprite), m_fields(fields), m_constants(constants), m_methods(methods)
-{
-}
 
 Engine::ObjectType::ObjectType(SpriteFramesAsset const *sprite,
                                ObjectType const *parentType,
@@ -15,8 +7,9 @@ Engine::ObjectType::ObjectType(SpriteFramesAsset const *sprite,
                                std::unordered_map<std::string, Runnable::CodeConstantValue> const &constants,
 
                                std::unordered_map<std::string, Runnable::RunnableFunction> const &methods,
-                               std::unordered_map<std::string, std::function<void(Scene &scene)>> const &nativeMethods)
-    : m_sprite(sprite), m_parent(parentType), m_fields(fields), m_constants(constants), m_methods(methods), m_nativeMethods(nativeMethods)
+                               std::unordered_map<std::string, std::function<void(Scene &scene)>> const &nativeMethods,
+                               std::vector<std::string> const &strings)
+    : m_sprite(sprite), m_parent(parentType), m_fields(fields), m_constants(constants), m_methods(methods), m_nativeMethods(nativeMethods), m_strings(strings)
 {
 }
 

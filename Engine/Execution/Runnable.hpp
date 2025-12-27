@@ -43,12 +43,15 @@ namespace Engine::Runnable
                           std::string const &spritePath,
                           std::unordered_map<std::string, CodeConstantValue> const &fields,
                           std::unordered_map<std::string, CodeConstantValue> const &constants,
-                          std::unordered_map<std::string, RunnableFunction> const &methods, bool defaultType) : m_name(name),
-                                                                                                                m_spritePath(spritePath),
-                                                                                                                m_fields(fields),
-                                                                                                                m_constants(constants),
-                                                                                                                m_methods(methods),
-                                                                                                                m_isDefaultType(defaultType) {}
+                          std::unordered_map<std::string, RunnableFunction> const &methods,
+                          std::vector<std::string> const &strings,
+                          bool defaultType) : m_name(name),
+                                              m_spritePath(spritePath),
+                                              m_fields(fields),
+                                              m_constants(constants),
+                                              m_methods(methods),
+                                              m_strings(strings),
+                                              m_isDefaultType(defaultType) {}
         std::string const &getName() const { return m_name; }
 
         std::unordered_map<std::string, CodeConstantValue> const &getFields() const { return m_fields; }
@@ -56,6 +59,8 @@ namespace Engine::Runnable
         std::unordered_map<std::string, CodeConstantValue> const &getConstants() const { return m_constants; }
 
         std::unordered_map<std::string, RunnableFunction> const &getMethods() const { return m_methods; }
+
+        std::vector<std::string> const &getStrings() const { return m_strings; }
 
         std::string const &getSpriteName() const { return m_spritePath; }
 
@@ -69,6 +74,7 @@ namespace Engine::Runnable
         std::unordered_map<std::string, CodeConstantValue> m_fields;
         std::unordered_map<std::string, CodeConstantValue> m_constants;
         std::unordered_map<std::string, RunnableFunction> m_methods;
+        std::vector<std::string> m_strings;
         bool m_isDefaultType;
     };
 

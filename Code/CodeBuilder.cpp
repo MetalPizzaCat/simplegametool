@@ -7,7 +7,7 @@ Code::CodeBuilder::CodeBuilder(std::vector<std::string> const &defaultTypes)
 
     for (std::string const &typeName : defaultTypes)
     {
-        addType({Engine::Runnable::TypeInfo(typeName, "", {}, {}, {}, true)});
+        addType({Engine::Runnable::TypeInfo(typeName, "", {}, {}, {}, {}, true)});
     }
 }
 size_t Code::CodeBuilder::addType(Engine::Runnable::TypeInfo const &type)
@@ -46,21 +46,36 @@ std::optional<size_t> Code::CodeBuilder::getTypeByName(std::string const &name)
 
 size_t Code::CodeBuilder::getOrAddStringId(std::string const &str)
 {
-    if (std::vector<std::string>::const_iterator it = std::find(m_strings.begin(), m_strings.end(), str); it != m_strings.end())
+    if (m_strings.empty())
     {
-        return it - m_strings.begin();
+        // the first block is used as the "global" block which is used for scene code parsing
+        createStringBlock();
     }
-    m_strings.push_back(str);
-    return m_strings.size() - 1;
+    if (std::vector<std::string>::const_iterator it = std::find(m_strings.back().begin(), m_strings.back().end(), str); it != m_strings.back().end())
+    {
+        return it - m_strings.back().begin();
+    }
+    m_strings.back().push_back(str);
+    return m_strings.back().size() - 1;
 }
 
+std::vector<std::string> Code::CodeBuilder::popStringBlock()
+{
+    if (m_strings.empty())
+    {
+        return {};
+    }
+    std::vector<std::string> r = m_strings.back();
+    m_strings.pop_back();
+    return r;
+}
 Engine::Runnable::RunnableCode Code::CodeBuilder::getRunnableCode() const
 {
     return Engine::Runnable::RunnableCode{
         .debugInfo = Debug::DebugInfo(m_functionDebugInfo),
         .functions = m_functions,
         .types = m_types,
-        .strings = m_strings,
+        .strings = m_strings.empty() ? std::vector<std::string>() : m_strings.front(),
         .typeDeclarationLocations = m_typeDeclarationLocations};
 }
 

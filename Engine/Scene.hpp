@@ -64,14 +64,17 @@ namespace Engine
         {
             // methods should all technically expect self as first argument
             pushToStack(instance);
+            m_executedTypes.push_back(instance->getType());
             if (std::optional<size_t> typeId = getIdForType(instance->getType()); typeId.has_value())
             {
+
                 runFunction(instance->getType()->getMethod(methodName), Runnable::RunnableFunctionDebugInfo{.typeId = typeId.value(), .functionName = methodName});
             }
             else
             {
                 runFunction(instance->getType()->getMethod(methodName), {});
             }
+            m_executedTypes.pop_back();
         }
 
         /// @brief Simple helper function that wraps the parsing and resolution process. If string is not found an error is thrown
@@ -237,8 +240,12 @@ namespace Engine
 
     private:
         std::optional<std::string> m_nextScene;
+        /// @brief Operation stack for each function frame
         std::vector<std::vector<Value>> m_operationStack = {{}};
+        /// @brief All the variables of the currently executed function
         std::vector<std::vector<Value>> m_variables;
+        /// @brief Data for the all the objects for which methods are executed
+        std::vector<ObjectType const *> m_executedTypes;
         std::unordered_map<std::string, Value> m_globals;
         std::vector<std::string> m_strings;
         std::unordered_map<std::string, size_t> m_typeNames;

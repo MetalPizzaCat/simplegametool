@@ -91,6 +91,16 @@ namespace Code
         /// @return Id of the string
         size_t getOrAddStringId(std::string const &str);
 
+        /// @brief Create a new block which has exclusive strings. Intended to use with type declarations which will have their own set of strigns
+        inline void createStringBlock()
+        {
+            m_strings.push_back({});
+        }
+
+        /// @brief Pop existing block of strings
+        /// @return String block on top of the stack or empty vector if no blocks were created
+        std::vector<std::string> popStringBlock();
+
         Engine::Runnable::RunnableCode getRunnableCode() const;
 
         CodeBlock &getCurrentBlock() { return m_blocks.back(); }
@@ -112,7 +122,7 @@ namespace Code
 
     private:
         std::vector<CodeBlock> m_blocks;
-        std::vector<std::string> m_strings;
+        std::vector<std::vector<std::string>> m_strings;
         std::vector<Engine::Runnable::TypeInfo> m_types;
         std::unordered_map<std::string, Engine::Runnable::RunnableFunction> m_functions;
         // section for data used for debug only
