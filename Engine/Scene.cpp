@@ -780,7 +780,17 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
             // Return value from a function and  exit
             case Instructions::Return:
             {
-                // TODO: add returning
+
+                // Only do something if there is a "parent" stack to push onto
+                // otherwise it's one of the root functions and we can discard the value
+                if (m_operationStack.size() > 1)
+                {
+                    Value res = popFromStackOrError();
+                    increaseValueRefCount(res);
+                    // "returning" is simply letting the value live outside of the original call stack
+                    (m_operationStack.rbegin() + 1)->push_back(res);
+                }
+                returning = true;
                 break;
             }
             case Instructions::GetField:
