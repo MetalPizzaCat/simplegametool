@@ -75,6 +75,8 @@ add_executable(simplegametool main.cpp
 
     Engine/Scene.hpp
     Engine/Scene.cpp
+    Engine/TypeManager.hpp
+    Engine/TypeManager.cpp
     Engine/Error.hpp
     Engine/Error.cpp
 

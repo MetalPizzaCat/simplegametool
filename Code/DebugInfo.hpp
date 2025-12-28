@@ -24,9 +24,9 @@ namespace Code::Debug
     class FunctionDebugInfo
     {
     public:
-        explicit FunctionDebugInfo(size_t typeId, std::string const &name, std::string const &sourceFileName);
+        explicit FunctionDebugInfo(std::string const& typeName, std::string const &name, std::string const &sourceFileName);
 
-        size_t getTypeId() const { return m_typeId; }
+        std::string const& getTypeName() const { return m_typeName; }
 
         std::string const &getName() const { return m_functionName; }
 
@@ -43,7 +43,7 @@ namespace Code::Debug
         void addByteRangeFromPrevious(size_t len, size_t row, size_t column);
 
     private:
-        size_t m_typeId;
+        std::string m_typeName;
         std::string m_fileName;
         std::string m_functionName;
         std::vector<DebugInfoEntry> m_data;
@@ -55,11 +55,11 @@ namespace Code::Debug
         explicit DebugInfo(std::vector<FunctionDebugInfo> const &info);
 
         /// @brief Try to get debug info for position in file for the given byte
-        /// @param typeId Type in which to search for the function information
+        /// @param typeName Type in which to search for the function information
         /// @param functionName Name of the function
         /// @param bytePos Position in bytecode
         /// @return Tuple of format `(row, column)` or none if no info found
-        std::optional<std::pair<size_t, size_t>> getFilePositionForByte(size_t typeId, std::string const &functionName, size_t bytePos) const;
+        std::optional<std::pair<size_t, size_t>> getFilePositionForByte(std::string const &typeName, std::string const &functionName, size_t bytePos) const;
 
     private:
         std::vector<FunctionDebugInfo> m_info;

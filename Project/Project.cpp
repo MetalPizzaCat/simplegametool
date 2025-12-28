@@ -11,8 +11,13 @@
 Project::Project::Project(std::string const &path)
 {
 
+    if (!std::filesystem::exists(path))
+    {
+        throw Errors::AssetFileError("Unable to locate  folder '" + path + "'. Folder does not exist");
+    }
     if (!std::filesystem::exists(path + "/project.json") || !std::filesystem::is_regular_file(path + "/project.json"))
     {
+
         throw Errors::AssetFileError("Unable to locate project info file (project.json) in folder '" + path + "'");
     }
     m_rootFolder = path;

@@ -10,10 +10,21 @@ namespace Engine
 
     class Scene;
 
+    /// @brief Class containing information related to user defined types. Stores all the information about methods, fields and constants that get copied into instances of objects using the type
     class ObjectType
     {
     public:
-        explicit ObjectType(SpriteFramesAsset const *sprite,
+        /// @brief Create a new instance of the object type
+        /// @param name Name of the type
+        /// @param sprite Sprite animation asset reference
+        /// @param parentType Base type that this inherits from(currently unused)
+        /// @param fields All the fields with default values which new instance of this type will have
+        /// @param constants Constants of a given type
+        /// @param methods 
+        /// @param nativeMethods 
+        /// @param strings 
+        explicit ObjectType(std::string const &name,
+                            SpriteFramesAsset const *sprite,
                             ObjectType const *parentType,
                             std::unordered_map<std::string, Runnable::CodeConstantValue> const &fields,
                             std::unordered_map<std::string, Runnable::CodeConstantValue> const &constants,
@@ -36,6 +47,8 @@ namespace Engine
 
         bool hasStringAt(size_t id) const { return id < m_strings.size(); }
 
+        std::string const &getName() const { return m_name; }
+
         /// @brief Try getting the constant field
         /// @param name Name of the field to get
         /// @param scene Scene used for resolving strings, if constant references a string scene will be used to create string object
@@ -43,6 +56,7 @@ namespace Engine
         std::optional<Value> getConstant(std::string const &name, Scene &scene) const;
 
     private:
+        std::string m_name;
         std::unordered_map<std::string, Runnable::RunnableFunction> m_methods;
         SpriteFramesAsset const *m_sprite;
         ObjectType const *m_parent;

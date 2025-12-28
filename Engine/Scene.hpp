@@ -65,15 +65,7 @@ namespace Engine
             // methods should all technically expect self as first argument
             pushToStack(instance);
             m_executedTypes.push_back(instance->getType());
-            if (std::optional<size_t> typeId = getIdForType(instance->getType()); typeId.has_value())
-            {
-
-                runFunction(instance->getType()->getMethod(methodName), Runnable::RunnableFunctionDebugInfo{.typeId = typeId.value(), .functionName = methodName});
-            }
-            else
-            {
-                runFunction(instance->getType()->getMethod(methodName), {});
-            }
+            runFunction(instance->getType()->getMethod(methodName), Runnable::RunnableFunctionDebugInfo{.typeName = instance->getType()->getName(), .functionName = methodName});
             m_executedTypes.pop_back();
         }
 
@@ -86,12 +78,6 @@ namespace Engine
             size_t id = parseOperationConstant<size_t>(byteCode.begin() + pos + 1, byteCode.end());
             pos += sizeof(size_t);
             return getConstantStringById(id);
-        }
-
-        void addType(std::string const &name, std::unique_ptr<ObjectType> type)
-        {
-            m_types.push_back(std::move(type));
-            m_typeNames[name] = m_types.size() - 1;
         }
 
         void addFunction(std::string const &name, Runnable::RunnableFunction const &function)
@@ -135,8 +121,6 @@ namespace Engine
         /// @param id Id of the string constant
         /// @return String value
         std::string const &getConstantStringById(size_t id) const;
-
-        std::optional<std::string> getTypeNameById(size_t id) const;
 
         /// @brief Pop value from current stack frame or throw error if no stack frame exists or stack is empty
         Value popFromStackOrError();
@@ -233,11 +217,6 @@ namespace Engine
 
         void collectGarbage();
 
-    protected:
-        /// @brief Populate current scene object with default types and types from compiled code
-        /// @param code
-        void populateTypeData(Runnable::RunnableCode const &code);
-
     private:
         std::optional<std::string> m_nextScene;
         /// @brief Operation stack for each function frame
@@ -248,8 +227,6 @@ namespace Engine
         std::vector<ObjectType const *> m_executedTypes;
         std::unordered_map<std::string, Value> m_globals;
         std::vector<std::string> m_strings;
-        std::unordered_map<std::string, size_t> m_typeNames;
-        std::vector<std::unique_ptr<ObjectType>> m_types;
         std::unordered_map<std::string, Runnable::RunnableFunction> m_functions;
         /// @brief Various game objects that have various game logic. Exists separate from other memory objects as they are controlled by player and exist "globally"
         std::vector<std::unique_ptr<GameObject>> m_objects;

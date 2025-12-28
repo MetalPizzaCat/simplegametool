@@ -50,7 +50,7 @@ namespace Code::Fusion
         /// @brief Parse function declaration and return name and byte info info
         /// @param typeId Id of the type that the function belongs to. Used only for generating debug info. -1 if it belongs to "scene" type
         /// @return Tuple containing function name and runnable info
-        std::pair<std::string, Engine::Runnable::RunnableFunction> parseFunctionDeclaration(size_t typeId = (size_t)-1);
+        std::pair<std::string, Engine::Runnable::RunnableFunction> parseFunctionDeclaration(std::string const& typeName);
 
         void parseInstruction(FusionInstruction instruction, Debug::FunctionDebugInfo &debugInfo);
 

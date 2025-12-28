@@ -6,33 +6,33 @@
 #include "System/Random.hpp"
 #include "Object/TextObject.hpp"
 #include "Object/ArrayObject.hpp"
+#include "TypeManager.hpp"
 
 #include <numbers>
 
 Engine::Scene::Scene(Runnable::RunnableCode const &code) : m_strings(code.strings), m_functions(code.functions), m_debugInfo(code.debugInfo)
 {
-    populateTypeData(code);
 }
 
 Engine::Scene::Scene(SceneDescription const &scene, Runnable::RunnableCode const &code) : m_strings(code.strings), m_functions(code.functions), m_debugInfo(code.debugInfo)
 {
-    populateTypeData(code);
     for (auto const &obj : scene.getObjects())
     {
         GameObject *gameObj = nullptr;
         if (SceneDescriptionAudioObject const *audio = dynamic_cast<SceneDescriptionAudioObject const *>(obj.get()); audio != nullptr)
         {
-            gameObj = createObject<AudioObject>(m_types[m_typeNames[obj->getTypeName()]].get(), obj->getName(), audio->getAudioName());
+
+            gameObj = createObject<AudioObject>(TypeManager::getInstance().getType(obj->getTypeName()), obj->getName(), audio->getAudioName());
         }
         else if (SceneDescriptionLabelObject const *labelData = dynamic_cast<SceneDescriptionLabelObject const *>(obj.get()); labelData != nullptr)
         {
-            TextObject *label = createObject<TextObject>(m_types[m_typeNames[obj->getTypeName()]].get(), obj->getName(), labelData->getFontName());
+            TextObject *label = createObject<TextObject>(TypeManager::getInstance().getType(obj->getTypeName()), obj->getName(), labelData->getFontName());
             label->setText(labelData->getText());
             gameObj = label;
         }
         else
         {
-            gameObj = createObject<GameObject>(m_types[m_typeNames[obj->getTypeName()]].get(), obj->getName());
+            gameObj = createObject<GameObject>(TypeManager::getInstance().getType(obj->getTypeName()), obj->getName());
         }
         gameObj->setPosition(obj->getStartPosition());
         for (auto const &[name, val] : obj->getDefaultValues())
@@ -159,14 +159,6 @@ std::string const &Engine::Scene::getConstantStringById(size_t id) const
     return m_strings[id];
 }
 
-std::optional<std::string> Engine::Scene::getTypeNameById(size_t id) const
-{
-    std::unordered_map<std::string, size_t>::const_iterator it = std::find_if(m_typeNames.begin(), m_typeNames.end(), [id](auto const &t)
-                                                                              { return t.second == id; });
-
-    return it == m_typeNames.end() ? std::optional<std::string>{} : it->first;
-}
-
 Engine::Value Engine::Scene::popFromStackOrError()
 {
     if (m_operationStack.empty() || m_operationStack.back().empty())
@@ -243,17 +235,6 @@ void Engine::Scene::appendArrayToStack(std::vector<Value> const &values)
     m_operationStack.back().insert(m_operationStack.back().end(), values.begin(), values.end());
 }
 
-std::optional<size_t> Engine::Scene::getIdForType(ObjectType const *type) const
-{
-    if (std::vector<std::unique_ptr<ObjectType>>::const_iterator it = std::find_if(m_types.begin(), m_types.end(), [type](std::unique_ptr<ObjectType> const &t)
-                                                                                   { return t.get() == type; });
-        it != m_types.end())
-    {
-        return it - m_types.begin();
-    }
-    return {};
-}
-
 void Engine::Scene::error(std::optional<Runnable::RunnableFunctionDebugInfo> const &location, size_t position, std::string const &message)
 {
     if (!location.has_value())
@@ -261,7 +242,7 @@ void Engine::Scene::error(std::optional<Runnable::RunnableFunctionDebugInfo> con
         // if we don't have debug info just throw error without location info
         throw Errors::ExecutionError(message);
     }
-    if (std::optional<std::pair<size_t, size_t>> filePos = m_debugInfo.getFilePositionForByte(location.value().typeId, location.value().functionName, position))
+    if (std::optional<std::pair<size_t, size_t>> filePos = m_debugInfo.getFilePositionForByte(location.value().typeName, location.value().functionName, position))
     {
         throw Errors::RuntimeError(filePos.value().first, filePos.value().second, message);
     }
@@ -325,109 +306,12 @@ void Engine::Scene::collectGarbage()
     }
 }
 
-void Engine::Scene::populateTypeData(Runnable::RunnableCode const &code)
-{
-    // special type that will be used to represent standard library functions and constants
-    // should always exist as type 0, for sake of simplicity, every other "default" type will be added this way
-    addType("std", std::make_unique<ObjectType>(nullptr,
-                                                nullptr,
-                                                std::unordered_map<std::string, Runnable::CodeConstantValue>(),                         // fields
-                                                std::unordered_map<std::string, Runnable::CodeConstantValue>{{"pi", std::numbers::pi}}, // constants
-                                                std::unordered_map<std::string, Runnable::RunnableFunction>(),                          // methods
-                                                std::unordered_map<std::string, std::function<void(Scene & scene)>>{{"sqrt", Standard::sqrt}}));
-
-    addType("Input", std::make_unique<ObjectType>(nullptr,
-                                                  nullptr,
-                                                  std::unordered_map<std::string, Runnable::CodeConstantValue>(), // fields
-                                                  std::unordered_map<std::string, Runnable::CodeConstantValue>{}, // constants
-                                                  std::unordered_map<std::string, Runnable::RunnableFunction>(),  // methods
-                                                  std::unordered_map<std::string, std::function<void(Scene & scene)>>{{"is_key_pressed", Standard::Input::isKeyPressed}}));
-
-    addType("Scancode", std::make_unique<ObjectType>(nullptr,
-                                                     nullptr,
-                                                     std::unordered_map<std::string, Runnable::CodeConstantValue>(), // fields
-                                                     Input::Scancodes,                                               // constants
-                                                     std::unordered_map<std::string, Runnable::RunnableFunction>(),  // methods
-                                                     std::unordered_map<std::string, std::function<void(Scene & scene)>>()));
-    addType("MouseButton", std::make_unique<ObjectType>(nullptr,
-                                                        nullptr,
-                                                        std::unordered_map<std::string, Runnable::CodeConstantValue>(), // fields
-                                                        Input::MouseButtons,                                            // constants
-                                                        std::unordered_map<std::string, Runnable::RunnableFunction>(),  // methods
-                                                        std::unordered_map<std::string, std::function<void(Scene & scene)>>()));
-
-    addType("AudioPlayer", std::make_unique<ObjectType>(nullptr,
-                                                        nullptr,
-                                                        std::unordered_map<std::string, Runnable::CodeConstantValue>(), // fields
-                                                        std::unordered_map<std::string, Runnable::CodeConstantValue>(), // constants
-                                                        std::unordered_map<std::string, Runnable::RunnableFunction>(),  // methods
-                                                        std::unordered_map<std::string, std::function<void(Scene & scene)>>{
-                                                            {"play", Standard::Audio::audioPlayerPlay}}));
-
-    addType("Audio", std::make_unique<ObjectType>(nullptr,
-                                                  nullptr,
-                                                  std::unordered_map<std::string, Runnable::CodeConstantValue>(), // fields
-                                                  std::unordered_map<std::string, Runnable::CodeConstantValue>(), // constants
-                                                  std::unordered_map<std::string, Runnable::RunnableFunction>(),  // methods
-                                                  std::unordered_map<std::string, std::function<void(Scene & scene)>>{
-                                                      {"set_listener_position", Standard::Audio::audioPlayerPlay}}));
-
-    addType("Random", std::make_unique<ObjectType>(nullptr,
-                                                   nullptr,
-                                                   std::unordered_map<std::string, Runnable::CodeConstantValue>(), // fields
-                                                   std::unordered_map<std::string, Runnable::CodeConstantValue>(), // constants
-                                                   std::unordered_map<std::string, Runnable::RunnableFunction>(),  // methods
-                                                   std::unordered_map<std::string, std::function<void(Scene & scene)>>{
-                                                       {"seed", Standard::Random::seed},
-                                                       {"rand_range_int", Standard::Random::getRandomIntInRange},
-                                                       {"rand_range_float", Standard::Random::getRandomFloatInRange}}));
-
-    addType("Label", std::make_unique<ObjectType>(nullptr,
-                                                  nullptr,
-                                                  std::unordered_map<std::string, Runnable::CodeConstantValue>(), // fields
-                                                  std::unordered_map<std::string, Runnable::CodeConstantValue>(), // constants
-                                                  std::unordered_map<std::string, Runnable::RunnableFunction>(),  // methods
-                                                  std::unordered_map<std::string, std::function<void(Scene & scene)>>{
-                                                      {"set_text", Standard::Label::setText},
-                                                      {"get_text", Standard::Label::getText},
-                                                      {"set_text_size", Standard::Label::setFontSize}}));
-    for (Runnable::TypeInfo const &type : code.types)
-    {
-        if (type.isDefaultType())
-        {
-            continue;
-        }
-        SpriteFramesAsset const *asset = ContentManager::getInstance().getAnimationAsset(type.getSpriteName());
-        if (asset == nullptr)
-        {
-            if (code.typeDeclarationLocations.contains(type.getName()))
-            {
-                throw Errors::RuntimeError(
-                    code.typeDeclarationLocations.at(type.getName()).row,
-                    code.typeDeclarationLocations.at(type.getName()).column,
-                    "Type '" + type.getName() + "' uses nonexistant asset '" + type.getSpriteName() + "'");
-            }
-            else
-            {
-                throw Errors::ExecutionError("Type '" + type.getName() + "' uses nonexistant asset '" + type.getSpriteName() + "'");
-            }
-        }
-        addType(type.getName(), std::make_unique<ObjectType>(asset,
-                                                             nullptr,
-                                                             type.getFields(),
-                                                             type.getConstants(),
-                                                             type.getMethods(),
-                                                             std::unordered_map<std::string, std::function<void(Scene & scene)>>{},
-                                                             type.getStrings()));
-    }
-}
-
 void Engine::Scene::runFunctionByName(std::string const &name)
 {
     if (m_functions.contains(name))
     {
         Runnable::RunnableFunction const &func = m_functions.at(name);
-        runFunction(func, Runnable::RunnableFunctionDebugInfo((size_t)-1, name));
+        runFunction(func, Runnable::RunnableFunctionDebugInfo("Scene", name));
     }
 }
 
@@ -470,7 +354,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 std::string const &name = popFromStackAsType<StringObject *>("Expected string for object name")->getString();
                 size_t typeId = parseOperationConstant<int64_t>(func.bytes.begin() + (pos + 1), func.bytes.end());
                 pos += sizeof(size_t);
-                GameObject *inst = createObject<GameObject>(m_types[typeId].get(), name);
+                GameObject *inst = createObject<GameObject>(TypeManager::getInstance().getType(getConstantStringById(typeId)), name);
                 if (m_objects.back()->getType()->hasMethod("init"))
                 {
                     pushToStack(inst);
@@ -845,7 +729,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 }
                 else
                 {
-                    error(debugInfo, pos, "No method with name '" + name + "' in type '" + getTypeNameById(getIdForType(obj->getType()).value()).value() + "'");
+                    error(debugInfo, pos, "No method with name '" + name + "' in type '" + obj->getType()->getName() + "'");
                 }
             }
             break;
@@ -855,24 +739,26 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 pos += sizeof(size_t);
                 size_t id = parseOperationConstant<size_t>(func.bytes.begin() + pos + 1, func.bytes.end());
                 pos += sizeof(size_t);
-                if (typeId >= m_types.size())
+                std::string const &typeName = getConstantStringById(typeId);
+                ObjectType const *t = TypeManager::getInstance().getType(typeName);
+                if (t == nullptr)
                 {
-                    error(debugInfo, pos, "Invalid typeid. No type with id '" + std::to_string(typeId) + "' present");
+                    error(debugInfo, pos, "Invalid type name. No type with name '" + typeName + "' exists");
                 }
+
                 std::string const &name = getConstantStringById(id);
                 // yes the way errors are handled is awkward and tbh rather strange but this was the easier way to handle converting byte code to position
-                if (m_types[typeId]->isNativeMethod(name))
+                if (t->isNativeMethod(name))
                 {
-                    m_types[typeId]->callNativeMethod(name, *this);
+                    t->callNativeMethod(name, *this);
                 }
-                else if (m_types[typeId]->hasMethod(name))
+                else if (t->hasMethod(name))
                 {
-                    runFunction(m_types[typeId]->getMethod(name), Runnable::RunnableFunctionDebugInfo(typeId, name));
+                    runFunction(t->getMethod(name), Runnable::RunnableFunctionDebugInfo(typeName, name));
                 }
                 else
                 {
-
-                    error(debugInfo, pos, "No method with name '" + name + "' in type '" + getTypeNameById(typeId).value() + "'");
+                    error(debugInfo, pos, "No method with name '" + name + "' in type '" + typeName + "'");
                 }
             }
             break;
@@ -930,17 +816,19 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
                 pos += sizeof(size_t);
                 size_t id = parseOperationConstant<size_t>(func.bytes.begin() + pos + 1, func.bytes.end());
                 pos += sizeof(size_t);
-                if (typeId >= m_types.size())
+                std::string const &typeName = getConstantStringById(typeId);
+                ObjectType const *t = TypeManager::getInstance().getType(typeName);
+                if (t == nullptr)
                 {
-                    error(debugInfo, pos, "Invalid typeid. No type with id '" + std::to_string(typeId) + "' present");
+                    error(debugInfo, pos, "Invalid type name. No type with name '" + typeName + "' exists");
                 }
-                if (std::optional<Value> v = m_types[typeId]->getConstant(getConstantStringById(id), *this); v.has_value())
+                if (std::optional<Value> v = t->getConstant(getConstantStringById(id), *this); v.has_value())
                 {
                     pushToStack(v.value());
                 }
                 else
                 {
-                    error(debugInfo, pos, "No constant with name '" + getConstantStringById(id) + "' in type '" + getTypeNameById(typeId).value() + "'");
+                    error(debugInfo, pos, "No constant with name '" + getConstantStringById(id) + "' in type '" + typeName + "'");
                 }
             }
             break;
@@ -948,7 +836,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
             case Instructions::CreateSoundPlayer:
             {
                 std::string const &assetName = popFromStackAsType<StringObject *>("Expected audio asset name")->getString();
-                pushToStack(createObject<AudioObject>(m_types[m_typeNames["AudioPlayer"]].get(),
+                pushToStack(createObject<AudioObject>(TypeManager::getInstance().getType("AudioPlayer"),
                                                       popFromStackAsType<StringObject *>("Expected object name")->getString(), assetName));
             }
             break;
@@ -978,7 +866,7 @@ void Engine::Scene::runFunction(Runnable::RunnableFunction const &func, std::opt
             case Instructions::CreateLabel:
             {
                 std::string const &assetName = popFromStackAsType<StringObject *>("Expected font name")->getString();
-                pushToStack(createObject<TextObject>(m_types[m_typeNames["Label"]].get(), popFromStackAsType<StringObject *>("Expected object name")->getString(), assetName));
+                pushToStack(createObject<TextObject>(TypeManager::getInstance().getType("Label"), popFromStackAsType<StringObject *>("Expected object name")->getString(), assetName));
             }
             break;
             case Instructions::ToString:

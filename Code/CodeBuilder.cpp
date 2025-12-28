@@ -2,48 +2,9 @@
 #include <algorithm>
 #include "../Engine/Execution/Instructions.hpp"
 #include "Error.hpp"
-Code::CodeBuilder::CodeBuilder(std::vector<std::string> const &defaultTypes)
+Code::CodeBuilder::CodeBuilder()
 {
-
-    for (std::string const &typeName : defaultTypes)
-    {
-        addType({Engine::Runnable::TypeInfo(typeName, "", {}, {}, {}, {}, true)});
-    }
 }
-size_t Code::CodeBuilder::addType(Engine::Runnable::TypeInfo const &type)
-{
-    if (std::vector<Engine::Runnable::TypeInfo>::const_iterator it = std::find_if(m_types.begin(), m_types.end(), [type](Engine::Runnable::TypeInfo const &t)
-                                                                                  { return t.getName() == type.getName(); });
-        it != m_types.end())
-    {
-        return (size_t)-1;
-    }
-    m_types.push_back(type);
-    return m_types.size() - 1;
-}
-
-size_t Code::CodeBuilder::getNextTypeId() const
-{
-    return m_types.size();
-}
-
-std::optional<size_t> Code::CodeBuilder::getTypeByName(std::string const &name)
-{
-    // self means we are working withing the current type, so no matter what the only id that is viable is next item id
-    // types can't be nested and if declaration is interrupted the whole process is aborted
-    if (name == "Self")
-    {
-        return m_types.size();
-    }
-    if (std::vector<Engine::Runnable::TypeInfo>::const_iterator it = std::find_if(m_types.begin(), m_types.end(), [name](Engine::Runnable::TypeInfo const &t)
-                                                                                  { return t.getName() == name; });
-        it != m_types.end())
-    {
-        return it - m_types.begin();
-    }
-    return {};
-}
-
 size_t Code::CodeBuilder::getOrAddStringId(std::string const &str)
 {
     if (m_strings.empty())
@@ -74,7 +35,6 @@ Engine::Runnable::RunnableCode Code::CodeBuilder::getRunnableCode() const
     return Engine::Runnable::RunnableCode{
         .debugInfo = Debug::DebugInfo(m_functionDebugInfo),
         .functions = m_functions,
-        .types = m_types,
         .strings = m_strings.empty() ? std::vector<std::string>() : m_strings.front(),
         .typeDeclarationLocations = m_typeDeclarationLocations};
 }
@@ -94,16 +54,16 @@ void Code::CodeBuilder::addFunction(std::string const &name, Engine::Runnable::R
     m_functions[name] = func;
 }
 
-Code::Debug::FunctionDebugInfo &Code::CodeBuilder::getOrCreateDebugEntryForFunction(size_t typeId, std::string const &functionName)
+Code::Debug::FunctionDebugInfo &Code::CodeBuilder::getOrCreateDebugEntryForFunction(std::string const& typeName, std::string const &functionName)
 {
     std::vector<Debug::FunctionDebugInfo>::iterator it = std::find_if(
         m_functionDebugInfo.begin(),
         m_functionDebugInfo.end(),
-        [typeId, functionName](Debug::FunctionDebugInfo const &fd)
-        { return fd.getTypeId() == typeId && fd.getName() == functionName; });
+        [typeName, functionName](Debug::FunctionDebugInfo const &fd)
+        { return fd.getTypeName() == typeName && fd.getName() == functionName; });
     if (it == m_functionDebugInfo.end())
     {
-        m_functionDebugInfo.push_back(Debug::FunctionDebugInfo(typeId, functionName, ""));
+        m_functionDebugInfo.push_back(Debug::FunctionDebugInfo(typeName, functionName, ""));
         return m_functionDebugInfo.back();
     }
     return *it;

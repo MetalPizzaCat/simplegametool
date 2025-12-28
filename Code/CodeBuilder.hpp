@@ -73,18 +73,9 @@ namespace Code
     class CodeBuilder
     {
     public:
-        explicit CodeBuilder(std::vector<std::string> const &defaultTypes = {});
+        explicit CodeBuilder();
 
-        /// @brief Add new type info
-        /// @param type Type info for user defined type
-        /// @return id of newly added type or -1 if type name was already in use and as such type was not added
-        size_t addType(Engine::Runnable::TypeInfo const &type);
-
-        /// @brief Get id that will be used for the next declared type
-        /// @return Id of the next type
-        size_t getNextTypeId() const;
-
-        std::optional<size_t> getTypeByName(std::string const &name);
+        // std::optional<size_t> getTypeByName(std::string const &name);
 
         /// @brief Attempt to get id for a string that contains given value, if string is not registered it gets added.
         /// @param str String to add
@@ -112,7 +103,7 @@ namespace Code
 
         void addFunction(std::string const &name, Engine::Runnable::RunnableFunction func);
 
-        Debug::FunctionDebugInfo &getOrCreateDebugEntryForFunction(size_t typeId, std::string const &functionName);
+        Debug::FunctionDebugInfo &getOrCreateDebugEntryForFunction(std::string const &typeName, std::string const &functionName);
 
         /// @brief Attempt to add info about location of type declaration
         /// @param name Name of the type
@@ -123,7 +114,6 @@ namespace Code
     private:
         std::vector<CodeBlock> m_blocks;
         std::vector<std::vector<std::string>> m_strings;
-        std::vector<Engine::Runnable::TypeInfo> m_types;
         std::unordered_map<std::string, Engine::Runnable::RunnableFunction> m_functions;
         // section for data used for debug only
         std::vector<Debug::FunctionDebugInfo> m_functionDebugInfo;

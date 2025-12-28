@@ -1,7 +1,8 @@
 #include "ObjectType.hpp"
 #include "../Scene.hpp"
 
-Engine::ObjectType::ObjectType(SpriteFramesAsset const *sprite,
+Engine::ObjectType::ObjectType(std::string const &name,
+                               SpriteFramesAsset const *sprite,
                                ObjectType const *parentType,
                                std::unordered_map<std::string, Runnable::CodeConstantValue> const &fields,
                                std::unordered_map<std::string, Runnable::CodeConstantValue> const &constants,
@@ -9,7 +10,14 @@ Engine::ObjectType::ObjectType(SpriteFramesAsset const *sprite,
                                std::unordered_map<std::string, Runnable::RunnableFunction> const &methods,
                                std::unordered_map<std::string, std::function<void(Scene &scene)>> const &nativeMethods,
                                std::vector<std::string> const &strings)
-    : m_sprite(sprite), m_parent(parentType), m_fields(fields), m_constants(constants), m_methods(methods), m_nativeMethods(nativeMethods), m_strings(strings)
+    : m_name(name),
+      m_sprite(sprite),
+      m_parent(parentType),
+      m_fields(fields),
+      m_constants(constants),
+      m_methods(methods),
+      m_nativeMethods(nativeMethods),
+      m_strings(strings)
 {
 }
 

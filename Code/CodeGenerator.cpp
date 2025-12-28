@@ -1,8 +1,9 @@
 #include "CodeGenerator.hpp"
 #include "Error.hpp"
-
+#include "../Engine/TypeManager.hpp"
+#include "../Engine/Content/ContentManager.hpp"
 Code::Fusion::FusionCodeGenerator::FusionCodeGenerator(std::vector<std::unique_ptr<Token>> tokens, std::vector<std::string> const &defaultTypes)
-    : m_tokens(std::move(tokens)), m_it(m_tokens.begin()), m_builder(defaultTypes)
+    : m_tokens(std::move(tokens)), m_it(m_tokens.begin())
 {
 }
 
@@ -17,7 +18,7 @@ void Code::Fusion::FusionCodeGenerator::generate()
         }
         else if (isKeyword(Keyword::Function))
         {
-            auto f = parseFunctionDeclaration();
+            auto f = parseFunctionDeclaration("Scene");
             m_builder.addFunction(f.first, f.second);
         }
         consumeEndOfStatement();
@@ -95,27 +96,43 @@ void Code::Fusion::FusionCodeGenerator::parseTypeDeclaration()
     // parse methods
     while (isKeyword(Keyword::Function))
     {
-        auto method = parseFunctionDeclaration(m_builder.getNextTypeId());
+        auto method = parseFunctionDeclaration(name->getId());
         methods[method.first] = method.second;
         consumeEndOfStatement();
     }
 
     consumeSeparator(Separator::BlockClose, "expected '}'");
 
+    Engine::SpriteFramesAsset const *asset = Engine::ContentManager::getInstance().getAnimationAsset(spriteName->getAssetName());
+    if (asset == nullptr)
+    {
+        throw Errors::ParsingError(spriteName->getRow(), spriteName->getColumn(), "Unable to find sprite asset with name '" + name->getId() + "'");
+    }
+
     // times likes this is when i miss how rust handles errors, but alas i can't be bothered to fight borrow checker
     // we check fot this twice because default types don't have debug file location, because they are not in any file
-    if (m_builder.addType(TypeInfo(name->getId(), spriteName->getAssetName(), fields, constants, methods, m_builder.popStringBlock(), false)) == (size_t)-1)
+    try
+    {
+        Engine::TypeManager::getInstance().createType(name->getId(),
+                                                      asset,
+                                                      nullptr,
+                                                      fields,
+                                                      constants,
+                                                      methods, {},
+                                                      m_builder.popStringBlock());
+    }
+    catch (Engine::TypeError e)
     {
         throw Errors::ParsingError(name->getRow(), name->getColumn(), "Type with name '" + name->getId() + "' already exists");
     }
 }
 
-std::pair<std::string, Engine::Runnable::RunnableFunction> Code::Fusion::FusionCodeGenerator::parseFunctionDeclaration(size_t typeId)
+std::pair<std::string, Engine::Runnable::RunnableFunction> Code::Fusion::FusionCodeGenerator::parseFunctionDeclaration(std::string const& typeName)
 {
     using namespace Engine::Runnable;
     consumeKeyword(Keyword::Function, "Expected 'func'");
     IdToken const *name = getTokenOrError<IdToken>("expected function name");
-    Debug::FunctionDebugInfo &debugInfo = m_builder.getOrCreateDebugEntryForFunction(typeId, name->getId());
+    Debug::FunctionDebugInfo &debugInfo = m_builder.getOrCreateDebugEntryForFunction(typeName, name->getId());
     advance();
     m_builder.createBlock();
     std::vector<std::string> argumentNames;
@@ -314,9 +331,9 @@ void Code::Fusion::FusionCodeGenerator::parseInstruction(FusionInstruction instr
         break;
         case InstructionArgumentType::ObjectType:
         {
-            if (std::optional<size_t> id = m_builder.getTypeByName(getTokenOrError<IdToken>("Expected type name")->getId()); id.has_value())
+            if (Engine::TypeManager::getInstance().doesTypeWithNameExist(getTokenOrError<IdToken>("Expected type name")->getId()))
             {
-                std::vector<uint8_t> b = parseToBytes(id.value());
+                std::vector<uint8_t> b = parseToBytes(m_builder.getOrAddStringId(getTokenOrError<IdToken>("Expected type name")->getId()));
                 bytes.insert(bytes.end(), b.begin(), b.end());
             }
             else
@@ -334,10 +351,11 @@ void Code::Fusion::FusionCodeGenerator::parseInstruction(FusionInstruction instr
         break;
         case InstructionArgumentType::MethodName:
         {
-            if (std::optional<size_t> id = m_builder.getTypeByName(getTokenOrError<IdToken>("Expected type name")->getId()); id.has_value())
+            std::string const& name = getTokenOrError<IdToken>("Expected type name")->getId();
+            if (Engine::TypeManager::getInstance().doesTypeWithNameExist(name))
             {
                 advance();
-                std::vector<uint8_t> b = parseToBytes(id.value());
+                std::vector<uint8_t> b = parseToBytes(m_builder.getOrAddStringId(name));
                 bytes.insert(bytes.end(), b.begin(), b.end());
                 consumeSeparator(Separator::Colon, "Expected '::'");
                 consumeSeparator(Separator::Colon, "Expected '::'");

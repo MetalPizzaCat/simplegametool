@@ -15,7 +15,7 @@
 
 Engine::Scene loadSceneFromString(std::string const &code)
 {
-    
+
     Engine::Runnable::RunnableCode sceneCode = Code::Fusion::compileFusionString(code);
 
     return Engine::Scene(sceneCode);
@@ -151,5 +151,5 @@ int runByPath(std::string const &path)
 
 int main(int, char **)
 {
-    return runByPath("./examples/pong");
+    return runByPath("./examples/helloworld");
 }

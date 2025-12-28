@@ -2,9 +2,9 @@
 #include <optional>
 #include <algorithm>
 
-Code::Debug::FunctionDebugInfo::FunctionDebugInfo(size_t typeId,
+Code::Debug::FunctionDebugInfo::FunctionDebugInfo(std::string const &typeName,
                                                   std::string const &name,
-                                                  std::string const &sourceFileName) : m_typeId(typeId),
+                                                  std::string const &sourceFileName) : m_typeName(typeName),
                                                                                        m_functionName(name),
                                                                                        m_fileName(sourceFileName)
 {
@@ -47,14 +47,14 @@ Code::Debug::DebugInfo::DebugInfo(std::vector<FunctionDebugInfo> const &info) : 
 {
 }
 
-std::optional<std::pair<size_t, size_t>> Code::Debug::DebugInfo::getFilePositionForByte(size_t typeId, std::string const &functionName, size_t bytePos) const
+std::optional<std::pair<size_t, size_t>> Code::Debug::DebugInfo::getFilePositionForByte(std::string const &typeName, std::string const &functionName, size_t bytePos) const
 {
     std::vector<FunctionDebugInfo>::const_iterator it = std::find_if(
         m_info.begin(),
         m_info.end(),
-        [typeId, functionName](FunctionDebugInfo const &info)
+        [typeName, functionName](FunctionDebugInfo const &info)
         {
-            return info.getTypeId() == typeId && info.getName() == functionName;
+            return info.getTypeName() == typeName && info.getName() == functionName;
         });
     if (it == m_info.end())
     {
