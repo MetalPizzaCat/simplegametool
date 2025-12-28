@@ -36,6 +36,6 @@ namespace Engine::Runnable
         Code::Debug::DebugInfo debugInfo;
         std::unordered_map<std::string, RunnableFunction> functions;
         std::vector<std::string> strings;
-        std::unordered_map<std::string, Code::Debug::DebugInfoSourceData> typeDeclarationLocations;
+        //std::unordered_map<std::string, Code::Debug::DebugInfoSourceData> typeDeclarationLocations;
     };
 } // namespace Engine

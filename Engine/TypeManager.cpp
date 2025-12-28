@@ -96,12 +96,27 @@ bool Engine::TypeManager::doesTypeWithNameExist(std::string const &name) const
                         { return t->getName() == name; }) != m_types.end();
 }
 
-Engine::ObjectType const *Engine::TypeManager::createStaticType(std::string const &name, std::unordered_map<std::string, Runnable::CodeConstantValue> const &constants, std::unordered_map<std::string, Runnable::RunnableFunction> const &methods, std::unordered_map<std::string, std::function<void(Scene &scene)>> const &nativeMethods)
+std::optional<std::string> Engine::TypeManager::getTypeDeclarationFileName(std::string const &typeName) const
+{
+    if (!m_typeDeclarationSourceFiles.contains(typeName))
+    {
+        return {};
+    }
+    return m_typeDeclarationSourceFiles.at(typeName);
+}
+
+Engine::ObjectType const *Engine::TypeManager::createStaticType(
+    std::string const &name,
+    std::string const &sourceFile,
+    std::unordered_map<std::string, Runnable::CodeConstantValue> const &constants,
+    std::unordered_map<std::string, Runnable::RunnableFunction> const &methods,
+    std::unordered_map<std::string, std::function<void(Scene &scene)>> const &nativeMethods)
 {
     if (doesTypeWithNameExist(name))
     {
         throw TypeError("Multiple type declaration for type '" + name + "'");
     }
+    m_typeDeclarationSourceFiles[name] = sourceFile;
     m_types.push_back(std::make_unique<ObjectType>(name,
                                                    nullptr,
                                                    nullptr,
@@ -114,6 +129,7 @@ Engine::ObjectType const *Engine::TypeManager::createStaticType(std::string cons
 
 Engine::ObjectType const *Engine::TypeManager::createType(
     std::string const &name,
+    std::string const &sourceFile,
     SpriteFramesAsset const *sprite,
     ObjectType const *parentType,
     std::unordered_map<std::string, Runnable::CodeConstantValue> const &fields,
@@ -126,6 +142,7 @@ Engine::ObjectType const *Engine::TypeManager::createType(
     {
         throw TypeError("Multiple type declaration for type '" + name + "'");
     }
+    m_typeDeclarationSourceFiles[name] = sourceFile;
     m_types.push_back(std::make_unique<ObjectType>(name,
                                                    sprite,
                                                    parentType,

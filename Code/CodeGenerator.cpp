@@ -2,8 +2,8 @@
 #include "Error.hpp"
 #include "../Engine/TypeManager.hpp"
 #include "../Engine/Content/ContentManager.hpp"
-Code::Fusion::FusionCodeGenerator::FusionCodeGenerator(std::vector<std::unique_ptr<Token>> tokens, std::vector<std::string> const &defaultTypes)
-    : m_tokens(std::move(tokens)), m_it(m_tokens.begin())
+Code::Fusion::FusionCodeGenerator::FusionCodeGenerator(std::vector<std::unique_ptr<Token>> tokens, std::string const &filename)
+    : m_tokens(std::move(tokens)), m_it(m_tokens.begin()), m_filename(filename)
 {
 }
 
@@ -54,6 +54,9 @@ void Code::Fusion::FusionCodeGenerator::parseTypeDeclaration()
     consumeKeyword(Keyword::Type, "Expected 'type'");
     IdToken const *name = getTokenOrError<IdToken>("expected type name");
 
+    // check if type was already declared in this file
+    // this is done to prevent multiple declaration in the same file
+    // TODO: Also check if this specific type was already compiled and skip it. Will possibly require additional data in type manager to separate redeclarations and recompilations
     if (!m_builder.addTypeDeclarationLocation(name->getId(), Debug::DebugInfoSourceData{.row = name->getRow(), .column = name->getColumn()}))
     {
         error("Type with name '" + name->getId() + "' already exists");
@@ -109,11 +112,18 @@ void Code::Fusion::FusionCodeGenerator::parseTypeDeclaration()
         throw Errors::ParsingError(spriteName->getRow(), spriteName->getColumn(), "Unable to find sprite asset with name '" + name->getId() + "'");
     }
 
-    // times likes this is when i miss how rust handles errors, but alas i can't be bothered to fight borrow checker
-    // we check fot this twice because default types don't have debug file location, because they are not in any file
+    // check if type was previously declared and if it was declared in the same file we simply don't add it
+    // we check if the type overrides existing type from the same file earlier in code so any overlap is assumed to be attempt at recompiling it
+    if (std::optional<std::string> filename = Engine::TypeManager::getInstance().getTypeDeclarationFileName(name->getId()); filename.has_value() && filename.value() == m_filename)
+    {
+        // pop the block either way to ensure that correct string blocks are written to correct types
+        m_builder.popStringBlock();
+        return;
+    }
     try
     {
         Engine::TypeManager::getInstance().createType(name->getId(),
+                                                      m_filename,
                                                       asset,
                                                       nullptr,
                                                       fields,
@@ -127,7 +137,7 @@ void Code::Fusion::FusionCodeGenerator::parseTypeDeclaration()
     }
 }
 
-std::pair<std::string, Engine::Runnable::RunnableFunction> Code::Fusion::FusionCodeGenerator::parseFunctionDeclaration(std::string const& typeName)
+std::pair<std::string, Engine::Runnable::RunnableFunction> Code::Fusion::FusionCodeGenerator::parseFunctionDeclaration(std::string const &typeName)
 {
     using namespace Engine::Runnable;
     consumeKeyword(Keyword::Function, "Expected 'func'");
@@ -351,7 +361,7 @@ void Code::Fusion::FusionCodeGenerator::parseInstruction(FusionInstruction instr
         break;
         case InstructionArgumentType::MethodName:
         {
-            std::string const& name = getTokenOrError<IdToken>("Expected type name")->getId();
+            std::string const &name = getTokenOrError<IdToken>("Expected type name")->getId();
             if (Engine::TypeManager::getInstance().doesTypeWithNameExist(name))
             {
                 advance();

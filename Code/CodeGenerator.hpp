@@ -11,7 +11,10 @@ namespace Code::Fusion
     class FusionCodeGenerator
     {
     public:
-        explicit FusionCodeGenerator(std::vector<std::unique_ptr<Token>> tokens, std::vector<std::string> const &defaultTypes);
+        /// @brief Create a new code generator instance that operates on existing tokens
+        /// @param tokens Tokens to use
+        /// @param filename Name of the original file from which the code was parsed, used for debugging purposes
+        explicit FusionCodeGenerator(std::vector<std::unique_ptr<Token>> tokens, std::string const &filename);
 
         void generate();
 
@@ -50,7 +53,7 @@ namespace Code::Fusion
         /// @brief Parse function declaration and return name and byte info info
         /// @param typeId Id of the type that the function belongs to. Used only for generating debug info. -1 if it belongs to "scene" type
         /// @return Tuple containing function name and runnable info
-        std::pair<std::string, Engine::Runnable::RunnableFunction> parseFunctionDeclaration(std::string const& typeName);
+        std::pair<std::string, Engine::Runnable::RunnableFunction> parseFunctionDeclaration(std::string const &typeName);
 
         void parseInstruction(FusionInstruction instruction, Debug::FunctionDebugInfo &debugInfo);
 
@@ -86,6 +89,7 @@ namespace Code::Fusion
         void consumeEndOfStatementOrError(std::string const &err);
 
     private:
+        std::string m_filename;
         void error(std::string const &errorMessage);
         CodeBuilder m_builder;
         std::vector<std::unique_ptr<Token>> m_tokens;

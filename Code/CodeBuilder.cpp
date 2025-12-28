@@ -36,7 +36,8 @@ Engine::Runnable::RunnableCode Code::CodeBuilder::getRunnableCode() const
         .debugInfo = Debug::DebugInfo(m_functionDebugInfo),
         .functions = m_functions,
         .strings = m_strings.empty() ? std::vector<std::string>() : m_strings.front(),
-        .typeDeclarationLocations = m_typeDeclarationLocations};
+        //.typeDeclarationLocations = m_typeDeclarationLocations
+    };
 }
 
 void Code::CodeBuilder::createBlock()
