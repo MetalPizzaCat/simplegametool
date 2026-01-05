@@ -130,6 +130,16 @@ Engine::SceneDescription Project::Project::loadScene(std::string const &path) co
                 {
                     startSize = sf::Vector2f(obj.at("size").at("x").get<float>(), obj.at("size").at("y").get<float>());
                 }
+
+                std::optional<std::string> spriteOverride = {};
+                if (obj.contains("sprite"))
+                {
+                    spriteOverride = obj.at("sprite").get<std::string>();
+                    if (spriteOverride.value() != "null" && Engine::ContentManager::getInstance().getAnimationAsset(spriteOverride.value()) == nullptr)
+                    {
+                        throw Errors::AssetFileError("Error in file '" + path + "': " + " referencing asset '" + spriteOverride.value() + "' which doesn't exist");
+                    }
+                }
                 sf::Vector2f startPos(obj.at("position").at("x").get<float>(), obj.at("position").at("y").get<float>());
                 std::map<std::string, Engine::SceneDescriptionPropertyValue> props;
                 if (obj.contains("properties"))

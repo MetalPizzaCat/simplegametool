@@ -32,7 +32,23 @@ Engine::Scene::Scene(SceneDescription const &scene, Runnable::RunnableCode const
         }
         else
         {
-            gameObj = createObject<GameObject>(TypeManager::getInstance().getType(obj->getTypeName()), obj->getName());
+            if (ObjectType const *type = TypeManager::getInstance().getType(obj->getTypeName()); type != nullptr)
+            {
+                gameObj = createObject<GameObject>(TypeManager::getInstance().getType(obj->getTypeName()), obj->getName());
+                if (obj->getSpriteOverride().has_value())
+                {
+                    // the check is *technically* unnecessary since we check when parsing the object. but double check just in case 
+                    if (SpriteFramesAsset const *anim = ContentManager::getInstance().getAnimationAsset(obj->getSpriteOverride().value()); anim != nullptr)
+                    {
+                        gameObj->changeSprite(anim);
+                    }
+                    // don't throw error yet tho
+                }
+            }
+            else
+            {
+                throw Errors::SceneCreationError(std::string("Object '") + obj->getName() + "' is of type '" + obj->getTypeName() + "' but no such type was found");
+            }
         }
         gameObj->setPosition(obj->getStartPosition());
         for (auto const &[name, val] : obj->getDefaultValues())

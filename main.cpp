@@ -131,7 +131,7 @@ int runByPath(std::string const &path)
             {
                 displayError(e.getColumn(), e.getLine(), code, e.what());
             }
-            catch (Engine::Errors::InvalidInstructionError e)
+            catch (Engine::Errors::SceneCreationError e)
             {
                 displayError(0, 0, code, e.what());
             }
@@ -151,5 +151,5 @@ int runByPath(std::string const &path)
 
 int main(int, char **)
 {
-    return runByPath("./examples/codedemo");
+    return runByPath("./examples/bf");
 }

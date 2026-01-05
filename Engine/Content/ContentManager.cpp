@@ -3,6 +3,10 @@
 #include "../Error.hpp"
 void Engine::ContentManager::addSpriteAsset(std::string const &name, std::unique_ptr<SpriteFramesAsset> asset)
 {
+    if (name == "null")
+    {
+        throw Errors::ContentError("Creating sprite asset with name 'null' is not allowed");
+    }
     m_spriteFrameAssets[name] = std::move(asset);
 }
 
@@ -18,7 +22,7 @@ void Engine::ContentManager::addFontAsset(std::string const &name, std::unique_p
 
 Engine::SpriteFramesAsset const *Engine::ContentManager::getAnimationAsset(std::string const &name) const
 {
-    if (m_spriteFrameAssets.contains(name))
+    if (name != "null" && m_spriteFrameAssets.contains(name))
     {
         return m_spriteFrameAssets.at(name).get();
     }

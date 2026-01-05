@@ -107,9 +107,9 @@ void Code::Fusion::FusionCodeGenerator::parseTypeDeclaration()
     consumeSeparator(Separator::BlockClose, "expected '}'");
 
     Engine::SpriteFramesAsset const *asset = Engine::ContentManager::getInstance().getAnimationAsset(spriteName->getAssetName());
-    if (asset == nullptr)
+    if (asset == nullptr && spriteName->getAssetName() != "null")
     {
-        throw Errors::ParsingError(spriteName->getRow(), spriteName->getColumn(), "Unable to find sprite asset with name '" + name->getId() + "'");
+        throw Errors::ParsingError(spriteName->getRow(), spriteName->getColumn(), "Unable to find sprite asset with name '" + spriteName->getAssetName() + "'");
     }
 
     // check if type was previously declared and if it was declared in the same file we simply don't add it

@@ -18,12 +18,12 @@ Engine::Errors::RuntimeError::RuntimeError(size_t row, size_t column, std::strin
 // {
 // }
 
-const char *Engine::Errors::InvalidInstructionError::what() const throw()
+const char *Engine::Errors::SceneCreationError::what() const throw()
 {
     return m_message.c_str();
 }
 
-Engine::Errors::InvalidInstructionError::InvalidInstructionError(std::string const &msg, size_t pos) : m_message(msg), m_pos(pos)
+Engine::Errors::SceneCreationError::SceneCreationError(std::string const &msg) : m_message(msg)
 {
 }
 

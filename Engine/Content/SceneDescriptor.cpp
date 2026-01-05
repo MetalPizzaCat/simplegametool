@@ -4,11 +4,13 @@ Engine::SceneDescriptionObject::SceneDescriptionObject(std::string const &name,
                                                        std::string const &type,
                                                        sf::Vector2f startPos,
                                                        std::optional<sf::Vector2f> startSize,
-                                                       std::map<std::string, SceneDescriptionPropertyValue> const &props) : m_name(name),
-                                                                                                                            m_typeName(type),
-                                                                                                                            m_startPosition(startPos),
-                                                                                                                            m_startSize(startSize),
-                                                                                                                            m_defaultValues(props)
+                                                       std::map<std::string, SceneDescriptionPropertyValue> const &props,
+                                                       std::optional<std::string> spriteOverride) : m_name(name),
+                                                                                                    m_typeName(type),
+                                                                                                    m_startPosition(startPos),
+                                                                                                    m_spritePath(spriteOverride),
+                                                                                                    m_startSize(startSize),
+                                                                                                    m_defaultValues(props)
 {
 }
 

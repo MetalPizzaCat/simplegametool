@@ -92,6 +92,21 @@ void Engine::GameObject::setFieldValue(std::string const &name, Value const &val
     increaseValueRefCount(val);
 }
 
+void Engine::GameObject::changeSprite(SpriteFramesAsset const *asset)
+{
+    m_sprite.reset();
+    if (asset == nullptr)
+    {
+        return;
+    }
+    m_sprite = std::move(ContentManager::getInstance().createSpriteFromAsset(asset));
+    if (m_sprite)
+    {
+        m_sprite->setAnimationFinishedCallback(std::bind(&GameObject::spriteAnimationFinishedCallback, this));
+        m_size = sf::Vector2f(m_sprite->getCurrentFrameSize().size.x, m_sprite->getCurrentFrameSize().size.y);
+    }
+}
+
 void Engine::GameObject::destroy()
 {
     // we don't need sprite anymore

@@ -54,11 +54,11 @@ namespace Engine::Errors
         size_t m_column;
     };
 
-    class InvalidInstructionError : public std::exception
+    class SceneCreationError : public std::exception
     {
     public:
         const char *what() const throw() override;
-        InvalidInstructionError(std::string const &msg, size_t pos);
+        SceneCreationError(std::string const &msg);
 
         size_t getPosition() const { return m_pos; }
 

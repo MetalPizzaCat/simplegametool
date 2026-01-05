@@ -58,6 +58,10 @@ namespace Engine
 
         void setAnimationJustFinished(bool has) { m_hasAnimationJustFinished = has; }
 
+        /// @brief Change animated sprite to a given asset
+        /// @param asset Sprite asset to update to, if `nullptr` sprite is just deleted 
+        void changeSprite(SpriteFramesAsset const* asset);
+
         /// @brief Mark object as ready to be destroyed. This does not instantly clear the memory used by the object to avoid accessing invalid data,
         /// but it will put in the state where it is not rendered and not updated and attempting to call functions on it will throw errors
         void destroy();

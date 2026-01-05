@@ -25,15 +25,30 @@ namespace Engine
                                         std::string const &type,
                                         sf::Vector2f startPos,
                                         std::optional<sf::Vector2f> startSize,
-                                        std::map<std::string, SceneDescriptionPropertyValue> const &props);
+                                        std::map<std::string, SceneDescriptionPropertyValue> const &props,
+                                        std::optional<std::string> spriteOverride = {});
 
-        std::string const &getName() const { return m_name; }
+        std::string const &getName() const
+        {
+            return m_name;
+        }
 
-        std::string const &getTypeName() const { return m_typeName; }
+        std::string const &getTypeName() const
+        {
+            return m_typeName;
+        }
 
-        sf::Vector2f getStartPosition() const { return m_startPosition; }
+        sf::Vector2f getStartPosition() const
+        {
+            return m_startPosition;
+        }
 
-        std::map<std::string, SceneDescriptionPropertyValue> const &getDefaultValues() const { return m_defaultValues; }
+        std::optional<std::string> getSpriteOverride() const { return m_spritePath; }
+
+        std::map<std::string, SceneDescriptionPropertyValue> const &getDefaultValues() const
+        {
+            return m_defaultValues;
+        }
 
         virtual ~SceneDescriptionObject() = default;
 
@@ -41,6 +56,7 @@ namespace Engine
         std::string m_name;
         std::string m_typeName;
         sf::Vector2f m_startPosition;
+        std::optional<std::string> m_spritePath;
         std::optional<sf::Vector2f> m_startSize;
         std::map<std::string, SceneDescriptionPropertyValue> m_defaultValues;
     };
