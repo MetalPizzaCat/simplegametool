@@ -37,8 +37,8 @@ Engine::Scene::Scene(SceneDescription const &scene, Runnable::RunnableCode const
                 gameObj = createObject<GameObject>(TypeManager::getInstance().getType(obj->getTypeName()), obj->getName());
                 if (obj->getSpriteOverride().has_value())
                 {
-                    // the check is *technically* unnecessary since we check when parsing the object. but double check just in case 
-                    if (SpriteFramesAsset const *anim = ContentManager::getInstance().getAnimationAsset(obj->getSpriteOverride().value()); anim != nullptr)
+                    // the check is *technically* unnecessary since we check when parsing the object. but double check just in case
+                    if (SpriteFramesAsset const *anim = ContentManager::getInstance().getAnimationAsset(obj->getSpriteOverride().value()); anim != nullptr || obj->getSpriteOverride().value() == "null")
                     {
                         gameObj->changeSprite(anim);
                     }

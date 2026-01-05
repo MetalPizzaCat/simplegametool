@@ -134,7 +134,7 @@ Engine::SceneDescription Project::Project::loadScene(std::string const &path) co
                 std::optional<std::string> spriteOverride = {};
                 if (obj.contains("sprite"))
                 {
-                    spriteOverride = obj.at("sprite").get<std::string>();
+                    spriteOverride = obj.at("sprite").is_null() ? "null" : obj.at("sprite").get<std::string>();
                     if (spriteOverride.value() != "null" && Engine::ContentManager::getInstance().getAnimationAsset(spriteOverride.value()) == nullptr)
                     {
                         throw Errors::AssetFileError("Error in file '" + path + "': " + " referencing asset '" + spriteOverride.value() + "' which doesn't exist");
@@ -188,7 +188,9 @@ Engine::SceneDescription Project::Project::loadScene(std::string const &path) co
                     objects.push_back(std::make_unique<Engine::SceneDescriptionObject>(obj.at("name").get<std::string>(),
                                                                                        type,
                                                                                        sf::Vector2f(obj.at("position").at("x").get<float>(), obj.at("position").at("y").get<float>()),
-                                                                                       startSize, props));
+                                                                                       startSize,
+                                                                                       props,
+                                                                                       spriteOverride));
                 }
             }
         }
